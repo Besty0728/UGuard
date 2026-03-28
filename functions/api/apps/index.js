@@ -1,4 +1,4 @@
-import { getKV, jsonResponse, normalizeExpiresAt } from '../../_shared.js';
+import { getKV, hydrateAppData, jsonResponse, normalizeAccessWindow, normalizeExpiresAt } from '../../_shared.js';
 
 export async function onRequestGet(context) {
   try {
@@ -14,8 +14,10 @@ export async function onRequestGet(context) {
       }
 
       const devices = await kv.get(`devices_${id}`, { type: 'json' });
-      appData.deviceCount = Array.isArray(devices) ? devices.length : 0;
-      apps.push(appData);
+      apps.push({
+        ...hydrateAppData(appData),
+        deviceCount: Array.isArray(devices) ? devices.length : 0,
+      });
     }
 
     return jsonResponse({ success: true, data: apps });
@@ -28,7 +30,7 @@ export async function onRequestPost(context) {
   try {
     const { request } = context;
     const kv = getKV(context);
-    const { name, maxDevices = 5, expiresAt = null } = await request.json();
+    const { name, maxDevices = 5, expiresAt = null, accessWindow } = await request.json();
 
     if (!name || typeof name !== 'string') {
       return jsonResponse({ success: false, error: 'app name is required' }, 400);
@@ -62,6 +64,7 @@ export async function onRequestPost(context) {
       expiresAt: normalizeExpiresAt(expiresAt),
       maxDevices: maxDevices || 0,
       logRetention: -1,
+      accessWindow: normalizeAccessWindow(accessWindow),
       permissions: { features: ['full'] },
     };
 
@@ -77,7 +80,7 @@ export async function onRequestPost(context) {
 
     return jsonResponse({
       success: true,
-      data: { app: appData, token },
+      data: { app: hydrateAppData(appData), token },
     });
   } catch (error) {
     return jsonResponse({ success: false, error: error.message }, 500);

@@ -8,6 +8,7 @@ import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash, randomBytes } from 'crypto';
+import { getAccessWindowStatus, hydrateAppData, normalizeAccessWindow, normalizeExpiresAt } from './functions/_shared.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -121,13 +122,13 @@ async function handleApps(method, body) {
     const apps = [];
     for (const id of appIds) {
       const appData = await ug_guard.get(`app_${id}`, { type: 'json' });
-      if (appData) apps.push(appData);
+      if (appData) apps.push(hydrateAppData(appData));
     }
     return json({ success: true, data: apps });
   }
 
   if (method === 'POST') {
-    const { name, maxDevices = 5, expiresAt = null } = body;
+    const { name, maxDevices = 5, expiresAt = null, accessWindow } = body;
     if (!name) return json({ success: false, error: '应用名称不能为空' }, 400);
 
     const appId = randomBytes(8).toString('hex');
@@ -138,9 +139,10 @@ async function handleApps(method, body) {
 
     const appData = {
       id: appId, name, tokenHash, status: 'active',
-      createdAt: now, expiresAt: expiresAt || null,
+      createdAt: now, expiresAt: normalizeExpiresAt(expiresAt),
       maxDevices: maxDevices || 0,
       logRetention: -1,
+      accessWindow: normalizeAccessWindow(accessWindow),
       permissions: { features: ['full'] },
     };
 
@@ -152,7 +154,7 @@ async function handleApps(method, body) {
     await ug_guard.put('apps_list', JSON.stringify(appIds));
     await ug_guard.put(`devices_${appId}`, JSON.stringify([]));
 
-    return json({ success: true, data: { app: appData, token } });
+    return json({ success: true, data: { app: hydrateAppData(appData), token } });
   }
 
   return json({ success: false, error: 'Method not allowed' }, 405);
@@ -164,7 +166,7 @@ async function handleAppDetail(method, appId, body) {
 
   if (method === 'GET') {
     const token = await ug_guard.get(`token_plain_${appId}`);
-    return json({ success: true, data: { ...appData, token } });
+    return json({ success: true, data: { ...hydrateAppData(appData), token } });
   }
 
   if (method === 'PUT') {
@@ -172,7 +174,8 @@ async function handleAppDetail(method, appId, body) {
     if (body.status !== undefined) appData.status = body.status;
     if (body.maxDevices !== undefined) appData.maxDevices = body.maxDevices;
     if (body.logRetention !== undefined) appData.logRetention = body.logRetention;
-    if (body.expiresAt !== undefined) appData.expiresAt = body.expiresAt;
+    if (body.expiresAt !== undefined) appData.expiresAt = normalizeExpiresAt(body.expiresAt);
+    if (body.accessWindow !== undefined) appData.accessWindow = normalizeAccessWindow(body.accessWindow);
     await ug_guard.put(`app_${appId}`, JSON.stringify(appData));
 
     if (body.status) {
@@ -183,7 +186,7 @@ async function handleAppDetail(method, appId, body) {
       }
     }
     const token = await ug_guard.get(`token_plain_${appId}`);
-    return json({ success: true, data: { ...appData, token } });
+    return json({ success: true, data: { ...hydrateAppData(appData), token } });
   }
 
   if (method === 'DELETE') {
@@ -246,11 +249,12 @@ async function handleVerify(method, body, ip) {
     return json({ valid: false, reason: 'token_revoked' });
   }
 
-  const appData = await ug_guard.get(`app_${tokenIndex.appId}`, { type: 'json' });
-  if (!appData) {
+  const rawAppData = await ug_guard.get(`app_${tokenIndex.appId}`, { type: 'json' });
+  if (!rawAppData) {
     await writeLog(tokenIndex.appId, '', fingerprint, ip, 'denied', '应用不存在');
     return json({ valid: false, reason: 'app_not_found' });
   }
+  const appData = hydrateAppData(rawAppData);
   if (appData.status !== 'active') {
     await writeLog(appData.id, appData.name, fingerprint, ip, 'suspended', '应用已暂停');
     return json({ valid: false, reason: 'app_suspended' });
@@ -258,6 +262,12 @@ async function handleVerify(method, body, ip) {
   if (appData.expiresAt && new Date(appData.expiresAt) < new Date()) {
     await writeLog(appData.id, appData.name, fingerprint, ip, 'expired', '应用已过期');
     return json({ valid: false, reason: 'app_expired' });
+  }
+
+  const accessWindowStatus = getAccessWindowStatus(appData.accessWindow);
+  if (!accessWindowStatus.open) {
+    await writeLog(appData.id, appData.name, fingerprint, ip, 'denied', buildAccessWindowReason(accessWindowStatus));
+    return json({ valid: false, reason: 'outside_access_hours' });
   }
 
   const fpHash = createHash('sha256').update(fingerprint).digest('hex');
@@ -315,6 +325,15 @@ async function writeLog(appId, appName, fingerprint, ip, result, reason) {
       userAgent: '',
     }));
   } catch { /* 日志写入失败不影响主流程 */ }
+}
+
+function buildAccessWindowReason(accessWindowStatus) {
+  const { accessWindow, currentHour } = accessWindowStatus;
+  return `outside access hours ${padHour(accessWindow.startHour)}:00-${padHour(accessWindow.endHour)}:00 (${accessWindow.timezone}), current ${padHour(currentHour)}:00`;
+}
+
+function padHour(hour) {
+  return String(hour).padStart(2, '0');
 }
 
 async function handleLogs(method, url) {

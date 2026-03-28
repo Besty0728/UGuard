@@ -1,4 +1,4 @@
-import { getKV, jsonResponse } from '../_shared.js';
+import { getAccessWindowStatus, getKV, hydrateAppData, jsonResponse } from '../_shared.js';
 
 export async function onRequestPost(context) {
   const { request } = context;
@@ -30,11 +30,13 @@ export async function onRequestPost(context) {
       return jsonResponse({ valid: false, reason: 'token_revoked' });
     }
 
-    const appData = await kv.get(`app_${tokenIndex.appId}`, { type: 'json' });
-    if (!appData) {
+    const rawAppData = await kv.get(`app_${tokenIndex.appId}`, { type: 'json' });
+    if (!rawAppData) {
       await writeLog(kv, tokenIndex.appId, '', fingerprint, ip, 'denied', 'app not found', request);
       return jsonResponse({ valid: false, reason: 'app_not_found' });
     }
+
+    const appData = hydrateAppData(rawAppData);
 
     if (appData.status !== 'active') {
       await writeLog(kv, appData.id, appData.name, fingerprint, ip, 'suspended', 'app suspended', request);
@@ -44,6 +46,21 @@ export async function onRequestPost(context) {
     if (appData.expiresAt && new Date(appData.expiresAt) < new Date()) {
       await writeLog(kv, appData.id, appData.name, fingerprint, ip, 'expired', 'app expired', request);
       return jsonResponse({ valid: false, reason: 'app_expired' });
+    }
+
+    const accessWindowStatus = getAccessWindowStatus(appData.accessWindow);
+    if (!accessWindowStatus.open) {
+      await writeLog(
+        kv,
+        appData.id,
+        appData.name,
+        fingerprint,
+        ip,
+        'denied',
+        buildAccessWindowReason(accessWindowStatus),
+        request,
+      );
+      return jsonResponse({ valid: false, reason: 'outside_access_hours' });
     }
 
     const fpHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint));
@@ -156,6 +173,15 @@ function getClientIp(request) {
   }
 
   return 'unknown';
+}
+
+function buildAccessWindowReason(accessWindowStatus) {
+  const { accessWindow, currentHour } = accessWindowStatus;
+  return `outside access hours ${padHour(accessWindow.startHour)}:00-${padHour(accessWindow.endHour)}:00 (${accessWindow.timezone}), current ${padHour(currentHour)}:00`;
+}
+
+function padHour(hour) {
+  return String(hour).padStart(2, '0');
 }
 
 async function writeLog(kv, appId, appName, fingerprint, ip, result, reason, request) {

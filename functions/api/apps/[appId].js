@@ -1,4 +1,4 @@
-import { getKV, jsonResponse, normalizeExpiresAt } from '../../_shared.js';
+import { getKV, hydrateAppData, jsonResponse, normalizeAccessWindow, normalizeExpiresAt } from '../../_shared.js';
 
 export async function onRequestGet(context) {
   try {
@@ -12,7 +12,7 @@ export async function onRequestGet(context) {
     }
 
     const token = await kv.get(`token_plain_${appId}`);
-    return jsonResponse({ success: true, data: { ...appData, token } });
+    return jsonResponse({ success: true, data: { ...hydrateAppData(appData), token } });
   } catch (error) {
     return jsonResponse({ success: false, error: error.message }, 500);
   }
@@ -36,6 +36,7 @@ export async function onRequestPut(context) {
     if (updates.maxDevices !== undefined) appData.maxDevices = updates.maxDevices;
     if (updates.logRetention !== undefined) appData.logRetention = updates.logRetention;
     if (updates.expiresAt !== undefined) appData.expiresAt = normalizeExpiresAt(updates.expiresAt);
+    if (updates.accessWindow !== undefined) appData.accessWindow = normalizeAccessWindow(updates.accessWindow);
 
     await kv.put(`app_${appId}`, JSON.stringify(appData));
 
@@ -48,7 +49,7 @@ export async function onRequestPut(context) {
     }
 
     const token = await kv.get(`token_plain_${appId}`);
-    return jsonResponse({ success: true, data: { ...appData, token } });
+    return jsonResponse({ success: true, data: { ...hydrateAppData(appData), token } });
   } catch (error) {
     return jsonResponse({ success: false, error: error.message }, 500);
   }
