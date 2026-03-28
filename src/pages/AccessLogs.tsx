@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getApps, getLogs } from '@/lib/api';
+import { getApps, getLogs, deleteLog } from '@/lib/api';
 import { StatusBadge } from '@/components/StatusBadge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
@@ -15,6 +15,7 @@ export function AccessLogs() {
   const [fResult, setFResult] = useState('');
   const [cursor, setCursor] = useState<string>();
   const [hasMore, setHasMore] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => { getApps().then(setApps).catch(() => {}); }, []);
   useEffect(() => { load(true); }, [fApp, fResult]);
@@ -27,6 +28,18 @@ export function AccessLogs() {
       setCursor(r.cursor); setHasMore(!!r.cursor);
     } catch (e) { setError(e instanceof Error ? e.message : '失败'); }
     finally { setLoading(false); }
+  }
+
+  async function handleDelete(logId: string) {
+    try {
+      setDeleting(logId);
+      await deleteLog(logId);
+      setLogs(prev => prev.filter(l => l.id !== logId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setDeleting(null);
+    }
   }
 
   return (
@@ -59,16 +72,26 @@ export function AccessLogs() {
               <th className="text-left font-medium px-5 py-2">原因</th>
               <th className="text-left font-medium px-5 py-2">IP</th>
               <th className="text-left font-medium px-5 py-2">指纹</th>
+              <th className="text-left font-medium px-5 py-2 w-12"></th>
             </tr></thead>
             <tbody>
               {logs.map(l => (
-                <tr key={l.id} className="border-b border-neutral-100/60 last:border-0 hover:bg-primary-50/30 transition-all duration-150">
+                <tr key={l.id} className="border-b border-neutral-100/60 last:border-0 hover:bg-primary-50/30 transition-all duration-150 group">
                   <td className="px-5 py-2.5 text-neutral-400 whitespace-nowrap">{formatDate(l.timestamp)}</td>
                   <td className="px-5 py-2.5 text-neutral-700">{l.appName || '-'}</td>
                   <td className="px-5 py-2.5"><StatusBadge status={l.result} /></td>
                   <td className="px-5 py-2.5 text-neutral-400">{l.reason || '-'}</td>
                   <td className="px-5 py-2.5 text-neutral-400 font-mono text-xs">{l.ip}</td>
                   <td className="px-5 py-2.5 text-neutral-300 font-mono text-xs">{l.deviceFingerprint.slice(0, 16)}...</td>
+                  <td className="px-5 py-2.5">
+                    <button
+                      onClick={() => handleDelete(l.id)}
+                      disabled={deleting === l.id}
+                      className="text-[12px] text-neutral-300 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30"
+                    >
+                      {deleting === l.id ? '...' : '删除'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

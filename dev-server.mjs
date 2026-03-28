@@ -338,6 +338,15 @@ async function handleLogs(method, url) {
   return json({ success: true, data: { logs, cursor: listResult.complete ? undefined : listResult.cursor } });
 }
 
+async function handleLogDelete(method, logId) {
+  if (method !== 'DELETE') return json({ success: false, error: 'Method not allowed' }, 405);
+  const key = `log_${logId}`;
+  const existing = await ug_access_logs.get(key);
+  if (!existing) return json({ success: false, error: '日志不存在' }, 404);
+  await ug_access_logs.delete(key);
+  return json({ success: true });
+}
+
 // ─── 路由匹配 ───
 
 async function route(req) {
@@ -388,6 +397,10 @@ async function route(req) {
   // /api/apps/:appId
   const appMatch = path.match(/^\/api\/apps\/([^/]+)$/);
   if (appMatch) return handleAppDetail(method, appMatch[1], body);
+
+  // /api/logs/:logId
+  const logMatch = path.match(/^\/api\/logs\/([^/]+)$/);
+  if (logMatch) return handleLogDelete(method, logMatch[1]);
 
   // /api/logs
   if (path === '/api/logs') return handleLogs(method, url);

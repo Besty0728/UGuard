@@ -94,3 +94,7 @@ export async function getLogs(filter?: LogFilter): Promise<{ logs: AccessLog[]; 
   const qs = params.toString();
   return request<{ logs: AccessLog[]; cursor?: string }>(`/logs${qs ? `?${qs}` : ''}`);
 }
+
+export async function deleteLog(logId: string): Promise<void> {
+  return request<void>(`/logs/${logId}`, { method: 'DELETE' });
+}
