@@ -22,6 +22,9 @@ const DEFAULT_GEO_RESTRICTION: GeoRestriction = {
   allowedRegions: [],
 };
 
+const COUNTRY_CODE_REFERENCE_URL = 'https://www.ditig.com/iso-3166-country-codes';
+const EDGEONE_GEO_REFERENCE_URL = 'https://edgeone.ai/document/52690';
+
 export function Apps() {
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -315,6 +318,25 @@ export function Apps() {
                 <p className="mt-2 text-[12px] font-medium text-dark/45">
                   使用逗号分隔。国家建议填 ISO 两位码，例如 CN, US。地区可填平台返回的 regionCode 或 regionName。
                 </p>
+
+                <div className="mt-3 flex flex-wrap gap-3 text-[12px] font-semibold">
+                  <a
+                    href={COUNTRY_CODE_REFERENCE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-700 transition-colors hover:text-amber-800 hover:underline"
+                  >
+                    查看国家码
+                  </a>
+                  <a
+                    href={EDGEONE_GEO_REFERENCE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-700 transition-colors hover:text-amber-800 hover:underline"
+                  >
+                    查看 EdgeOne 地区字段
+                  </a>
+                </div>
 
                 {geoRestrictionEnabled && (
                   <div className="mt-5 grid grid-cols-2 gap-4">

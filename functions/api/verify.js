@@ -1,4 +1,4 @@
-import { getAccessWindowStatus, getGeoRestrictionStatus, getKV, hydrateAppData, jsonResponse } from '../_shared.js';
+import { getAccessWindowStatus, getGeoRestrictionStatus, getKV, getRequestLocation, hydrateAppData, jsonResponse } from '../_shared.js';
 
 export async function onRequestPost(context) {
   const { request } = context;
@@ -215,6 +215,7 @@ function denyResponse(reason, message, detail = {}, status = 200) {
 
 async function writeLog(kv, appId, appName, fingerprint, ip, result, reason, request) {
   try {
+    const location = getRequestLocation(request);
     const now = Date.now();
     const randBytes = new Uint8Array(4);
     crypto.getRandomValues(randBytes);
@@ -236,6 +237,10 @@ async function writeLog(kv, appId, appName, fingerprint, ip, result, reason, req
       reason,
       timestamp: new Date().toISOString(),
       userAgent: request.headers.get('User-Agent') || '',
+      countryCode: location.countryCode,
+      countryName: location.countryName,
+      regionCode: location.regionCode,
+      regionName: location.regionName,
     };
 
     await kv.put(logKey, JSON.stringify(logData));

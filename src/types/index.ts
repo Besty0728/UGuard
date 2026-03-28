@@ -79,6 +79,10 @@ export interface AccessLog {
   reason: string;
   timestamp: string;
   userAgent: string;
+  countryCode?: string | null;
+  countryName?: string | null;
+  regionCode?: string | null;
+  regionName?: string | null;
 }
 
 export interface ApiResponse<T = unknown> {

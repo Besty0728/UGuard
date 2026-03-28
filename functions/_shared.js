@@ -178,7 +178,7 @@ function normalizeStringList(value, uppercase = false) {
   return [...new Set(normalized)];
 }
 
-function getRequestLocation(request) {
+export function getRequestLocation(request) {
   const geo = request?.eo?.geo ?? {};
   const countryCode =
     normalizeLocationValue(geo.countryCodeAlpha2, true) ||
