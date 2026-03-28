@@ -11,8 +11,8 @@ export async function onRequestGet({ request }) {
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 256);
     const cursor = url.searchParams.get('cursor') || undefined;
 
-    // 从 access_logs KV 中列出日志 key
-    const listResult = await access_logs.list({
+    // 从 ug_access_logs KV 中列出日志 key
+    const listResult = await ug_access_logs.list({
       prefix: 'log_',
       limit: 256,
       cursor,
@@ -21,7 +21,7 @@ export async function onRequestGet({ request }) {
     // 收集匹配的日志（保留 KV key 用于可能的清理）
     const allMatched = [];
     for (const key of listResult.keys) {
-      const logData = await access_logs.get(key.name, { type: 'json' });
+      const logData = await ug_access_logs.get(key.name, { type: 'json' });
       if (!logData) continue;
       if (filterAppId && logData.appId !== filterAppId) continue;
       if (filterResult && logData.result !== filterResult) continue;
@@ -34,12 +34,12 @@ export async function onRequestGet({ request }) {
     // 日志清理：若指定了 appId 且该应用设置了保留条数上限
     if (filterAppId && allMatched.length > 0) {
       try {
-        const appData = await app_store.get(`app_${filterAppId}`, { type: 'json' });
+        const appData = await ug_app_store.get(`app_${filterAppId}`, { type: 'json' });
         const logRetention = appData?.logRetention;
         if (logRetention > 0 && allMatched.length > logRetention) {
           const toDelete = allMatched.slice(logRetention);
           for (const log of toDelete) {
-            await access_logs.delete(log._key);
+            await ug_access_logs.delete(log._key);
           }
         }
       } catch {

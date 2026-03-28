@@ -21,7 +21,7 @@ export async function onRequestPost({ request }) {
     const tokenHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
     const tokenHash = Array.from(new Uint8Array(tokenHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const tokenIndex = await app_store.get(`token_${tokenHash}`, { type: 'json' });
+    const tokenIndex = await ug_app_store.get(`token_${tokenHash}`, { type: 'json' });
 
     if (!tokenIndex) {
       await writeLog('unknown', '', fingerprint, ip, 'denied', 'Token 不存在', request);
@@ -34,7 +34,7 @@ export async function onRequestPost({ request }) {
     }
 
     // 2. 查找应用
-    const appData = await app_store.get(`app_${tokenIndex.appId}`, { type: 'json' });
+    const appData = await ug_app_store.get(`app_${tokenIndex.appId}`, { type: 'json' });
 
     if (!appData) {
       await writeLog(tokenIndex.appId, '', fingerprint, ip, 'denied', '应用不存在', request);
@@ -59,7 +59,7 @@ export async function onRequestPost({ request }) {
 
     // 6. 查找/注册设备
     const deviceKey = `device_${appData.id}_${fpHash}`;
-    let device = await app_store.get(deviceKey, { type: 'json' });
+    let device = await ug_app_store.get(deviceKey, { type: 'json' });
 
     if (device) {
       // 设备已存在 — 检查是否被封禁
@@ -72,11 +72,11 @@ export async function onRequestPost({ request }) {
       device.lastSeen = new Date().toISOString();
       device.lastIP = ip;
       device.accessCount += 1;
-      await app_store.put(deviceKey, JSON.stringify(device));
+      await ug_app_store.put(deviceKey, JSON.stringify(device));
     } else {
       // 新设备 — 检查设备数量限制
       if (appData.maxDevices > 0) {
-        const deviceList = await app_store.get(`devices_${appData.id}`, { type: 'json' }) || [];
+        const deviceList = await ug_app_store.get(`devices_${appData.id}`, { type: 'json' }) || [];
         if (deviceList.length >= appData.maxDevices) {
           await writeLog(appData.id, appData.name, fingerprint, ip, 'max_devices', `设备数已达上限 ${appData.maxDevices}`, request);
           return jsonResponse({ valid: false, reason: 'max_devices_reached' });
@@ -105,12 +105,12 @@ export async function onRequestPost({ request }) {
         note: '',
       };
 
-      await app_store.put(deviceKey, JSON.stringify(device));
+      await ug_app_store.put(deviceKey, JSON.stringify(device));
 
       // 更新设备列表索引
-      const deviceList = await app_store.get(`devices_${appData.id}`, { type: 'json' }) || [];
+      const deviceList = await ug_app_store.get(`devices_${appData.id}`, { type: 'json' }) || [];
       deviceList.push(fpHash);
-      await app_store.put(`devices_${appData.id}`, JSON.stringify(deviceList));
+      await ug_app_store.put(`devices_${appData.id}`, JSON.stringify(deviceList));
     }
 
     // 7. 验证通过 — 记录日志（采样：仅记录部分成功日志）
@@ -150,7 +150,7 @@ async function writeLog(appId, appName, fingerprint, ip, result, reason, request
       userAgent: request.headers.get('User-Agent') || '',
     };
 
-    await access_logs.put(logKey, JSON.stringify(logData));
+    await ug_access_logs.put(logKey, JSON.stringify(logData));
   } catch {
     // 日志写入失败不影响主流程
   }

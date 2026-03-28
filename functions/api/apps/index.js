@@ -5,12 +5,12 @@
 
 export async function onRequestGet() {
   try {
-    const listRaw = await app_store.get('apps_list', { type: 'json' });
+    const listRaw = await ug_app_store.get('apps_list', { type: 'json' });
     const appIds = listRaw || [];
 
     const apps = [];
     for (const id of appIds) {
-      const appData = await app_store.get(`app_${id}`, { type: 'json' });
+      const appData = await ug_app_store.get(`app_${id}`, { type: 'json' });
       if (appData) apps.push(appData);
     }
 
@@ -58,25 +58,25 @@ export async function onRequestPost({ request }) {
     };
 
     // 存储应用数据
-    await app_store.put(`app_${appId}`, JSON.stringify(appData));
+    await ug_app_store.put(`app_${appId}`, JSON.stringify(appData));
 
     // 存储 Token 反查索引
-    await app_store.put(`token_${tokenHash}`, JSON.stringify({
+    await ug_app_store.put(`token_${tokenHash}`, JSON.stringify({
       appId,
       status: 'active',
     }));
 
     // 存储明文 Token（管理员可反复查看）
-    await app_store.put(`token_plain_${appId}`, token);
+    await ug_app_store.put(`token_plain_${appId}`, token);
 
     // 更新应用列表索引
-    const listRaw = await app_store.get('apps_list', { type: 'json' });
+    const listRaw = await ug_app_store.get('apps_list', { type: 'json' });
     const appIds = listRaw || [];
     appIds.push(appId);
-    await app_store.put('apps_list', JSON.stringify(appIds));
+    await ug_app_store.put('apps_list', JSON.stringify(appIds));
 
     // 初始化设备列表索引
-    await app_store.put(`devices_${appId}`, JSON.stringify([]));
+    await ug_app_store.put(`devices_${appId}`, JSON.stringify([]));
 
     return jsonResponse({
       success: true,

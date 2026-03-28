@@ -69,8 +69,8 @@ function createKVNamespace() {
   };
 }
 
-const app_store = createKVNamespace();
-const access_logs = createKVNamespace();
+const ug_app_store = createKVNamespace();
+const ug_access_logs = createKVNamespace();
 
 // ─── 路由处理 ───
 
@@ -97,11 +97,11 @@ async function handleAuth(method, body) {
 
 async function handleApps(method, body) {
   if (method === 'GET') {
-    const listRaw = await app_store.get('apps_list', { type: 'json' });
+    const listRaw = await ug_app_store.get('apps_list', { type: 'json' });
     const appIds = listRaw || [];
     const apps = [];
     for (const id of appIds) {
-      const appData = await app_store.get(`app_${id}`, { type: 'json' });
+      const appData = await ug_app_store.get(`app_${id}`, { type: 'json' });
       if (appData) apps.push(appData);
     }
     return json({ success: true, data: apps });
@@ -125,13 +125,13 @@ async function handleApps(method, body) {
       permissions: { features: ['full'] },
     };
 
-    await app_store.put(`app_${appId}`, JSON.stringify(appData));
-    await app_store.put(`token_${tokenHash}`, JSON.stringify({ appId, status: 'active' }));
-    await app_store.put(`token_plain_${appId}`, token);
-    const appIds = (await app_store.get('apps_list', { type: 'json' })) || [];
+    await ug_app_store.put(`app_${appId}`, JSON.stringify(appData));
+    await ug_app_store.put(`token_${tokenHash}`, JSON.stringify({ appId, status: 'active' }));
+    await ug_app_store.put(`token_plain_${appId}`, token);
+    const appIds = (await ug_app_store.get('apps_list', { type: 'json' })) || [];
     appIds.push(appId);
-    await app_store.put('apps_list', JSON.stringify(appIds));
-    await app_store.put(`devices_${appId}`, JSON.stringify([]));
+    await ug_app_store.put('apps_list', JSON.stringify(appIds));
+    await ug_app_store.put(`devices_${appId}`, JSON.stringify([]));
 
     return json({ success: true, data: { app: appData, token } });
   }
@@ -140,11 +140,11 @@ async function handleApps(method, body) {
 }
 
 async function handleAppDetail(method, appId, body) {
-  const appData = await app_store.get(`app_${appId}`, { type: 'json' });
+  const appData = await ug_app_store.get(`app_${appId}`, { type: 'json' });
   if (!appData) return json({ success: false, error: '应用不存在' }, 404);
 
   if (method === 'GET') {
-    const token = await app_store.get(`token_plain_${appId}`);
+    const token = await ug_app_store.get(`token_plain_${appId}`);
     return json({ success: true, data: { ...appData, token } });
   }
 
@@ -154,28 +154,28 @@ async function handleAppDetail(method, appId, body) {
     if (body.maxDevices !== undefined) appData.maxDevices = body.maxDevices;
     if (body.logRetention !== undefined) appData.logRetention = body.logRetention;
     if (body.expiresAt !== undefined) appData.expiresAt = body.expiresAt;
-    await app_store.put(`app_${appId}`, JSON.stringify(appData));
+    await ug_app_store.put(`app_${appId}`, JSON.stringify(appData));
 
     if (body.status) {
-      const ti = await app_store.get(`token_${appData.tokenHash}`, { type: 'json' });
+      const ti = await ug_app_store.get(`token_${appData.tokenHash}`, { type: 'json' });
       if (ti) {
         ti.status = body.status === 'active' ? 'active' : 'revoked';
-        await app_store.put(`token_${appData.tokenHash}`, JSON.stringify(ti));
+        await ug_app_store.put(`token_${appData.tokenHash}`, JSON.stringify(ti));
       }
     }
-    const token = await app_store.get(`token_plain_${appId}`);
+    const token = await ug_app_store.get(`token_plain_${appId}`);
     return json({ success: true, data: { ...appData, token } });
   }
 
   if (method === 'DELETE') {
-    await app_store.delete(`token_${appData.tokenHash}`);
-    await app_store.delete(`token_plain_${appId}`);
-    const deviceList = (await app_store.get(`devices_${appId}`, { type: 'json' })) || [];
-    for (const fp of deviceList) await app_store.delete(`device_${appId}_${fp}`);
-    await app_store.delete(`devices_${appId}`);
-    await app_store.delete(`app_${appId}`);
-    const list = (await app_store.get('apps_list', { type: 'json' })) || [];
-    await app_store.put('apps_list', JSON.stringify(list.filter(id => id !== appId)));
+    await ug_app_store.delete(`token_${appData.tokenHash}`);
+    await ug_app_store.delete(`token_plain_${appId}`);
+    const deviceList = (await ug_app_store.get(`devices_${appId}`, { type: 'json' })) || [];
+    for (const fp of deviceList) await ug_app_store.delete(`device_${appId}_${fp}`);
+    await ug_app_store.delete(`devices_${appId}`);
+    await ug_app_store.delete(`app_${appId}`);
+    const list = (await ug_app_store.get('apps_list', { type: 'json' })) || [];
+    await ug_app_store.put('apps_list', JSON.stringify(list.filter(id => id !== appId)));
     return json({ success: true });
   }
 
@@ -184,10 +184,10 @@ async function handleAppDetail(method, appId, body) {
 
 async function handleDevices(method, appId) {
   if (method !== 'GET') return json({ success: false, error: 'Method not allowed' }, 405);
-  const deviceList = (await app_store.get(`devices_${appId}`, { type: 'json' })) || [];
+  const deviceList = (await ug_app_store.get(`devices_${appId}`, { type: 'json' })) || [];
   const devices = [];
   for (const fp of deviceList) {
-    const d = await app_store.get(`device_${appId}_${fp}`, { type: 'json' });
+    const d = await ug_app_store.get(`device_${appId}_${fp}`, { type: 'json' });
     if (d) devices.push(d);
   }
   return json({ success: true, data: devices });
@@ -195,13 +195,13 @@ async function handleDevices(method, appId) {
 
 async function handleDeviceUpdate(method, appId, deviceId, body) {
   if (method !== 'PUT') return json({ success: false, error: 'Method not allowed' }, 405);
-  const deviceList = (await app_store.get(`devices_${appId}`, { type: 'json' })) || [];
+  const deviceList = (await ug_app_store.get(`devices_${appId}`, { type: 'json' })) || [];
   for (const fp of deviceList) {
-    const d = await app_store.get(`device_${appId}_${fp}`, { type: 'json' });
+    const d = await ug_app_store.get(`device_${appId}_${fp}`, { type: 'json' });
     if (d && d.deviceId === deviceId) {
       if (body.banned !== undefined) { d.banned = body.banned; d.bannedAt = body.banned ? new Date().toISOString() : null; }
       if (body.note !== undefined) d.note = body.note;
-      await app_store.put(`device_${appId}_${fp}`, JSON.stringify(d));
+      await ug_app_store.put(`device_${appId}_${fp}`, JSON.stringify(d));
       return json({ success: true, data: d });
     }
   }
@@ -217,7 +217,7 @@ async function handleVerify(method, body, ip) {
   }
 
   const tokenHash = createHash('sha256').update(token).digest('hex');
-  const tokenIndex = await app_store.get(`token_${tokenHash}`, { type: 'json' });
+  const tokenIndex = await ug_app_store.get(`token_${tokenHash}`, { type: 'json' });
   if (!tokenIndex) {
     await writeLog('unknown', '', fingerprint, ip, 'denied', 'Token 不存在');
     return json({ valid: false, reason: 'invalid_token' });
@@ -227,7 +227,7 @@ async function handleVerify(method, body, ip) {
     return json({ valid: false, reason: 'token_revoked' });
   }
 
-  const appData = await app_store.get(`app_${tokenIndex.appId}`, { type: 'json' });
+  const appData = await ug_app_store.get(`app_${tokenIndex.appId}`, { type: 'json' });
   if (!appData) {
     await writeLog(tokenIndex.appId, '', fingerprint, ip, 'denied', '应用不存在');
     return json({ valid: false, reason: 'app_not_found' });
@@ -243,7 +243,7 @@ async function handleVerify(method, body, ip) {
 
   const fpHash = createHash('sha256').update(fingerprint).digest('hex');
   const deviceKey = `device_${appData.id}_${fpHash}`;
-  let device = await app_store.get(deviceKey, { type: 'json' });
+  let device = await ug_app_store.get(deviceKey, { type: 'json' });
 
   if (device) {
     if (device.banned) {
@@ -253,10 +253,10 @@ async function handleVerify(method, body, ip) {
     device.lastSeen = new Date().toISOString();
     device.lastIP = ip;
     device.accessCount += 1;
-    await app_store.put(deviceKey, JSON.stringify(device));
+    await ug_app_store.put(deviceKey, JSON.stringify(device));
   } else {
     if (appData.maxDevices > 0) {
-      const dl = (await app_store.get(`devices_${appData.id}`, { type: 'json' })) || [];
+      const dl = (await ug_app_store.get(`devices_${appData.id}`, { type: 'json' })) || [];
       if (dl.length >= appData.maxDevices) {
         await writeLog(appData.id, appData.name, fingerprint, ip, 'max_devices', `设备数已达上限 ${appData.maxDevices}`);
         return json({ valid: false, reason: 'max_devices_reached' });
@@ -269,10 +269,10 @@ async function handleVerify(method, body, ip) {
       accessCount: 1, banned: false, bannedAt: null,
       os: os || '', unityVersion: unityVersion || '', deviceModel: deviceModel || '', timezone: timezone || '', note: '',
     };
-    await app_store.put(deviceKey, JSON.stringify(device));
-    const dl = (await app_store.get(`devices_${appData.id}`, { type: 'json' })) || [];
+    await ug_app_store.put(deviceKey, JSON.stringify(device));
+    const dl = (await ug_app_store.get(`devices_${appData.id}`, { type: 'json' })) || [];
     dl.push(fpHash);
-    await app_store.put(`devices_${appData.id}`, JSON.stringify(dl));
+    await ug_app_store.put(`devices_${appData.id}`, JSON.stringify(dl));
   }
 
   // 记录访问日志（本地环境 100% 记录，若应用设置为不记录则跳过）
@@ -288,7 +288,7 @@ async function writeLog(appId, appName, fingerprint, ip, result, reason) {
     const now = Date.now();
     const rand = randomBytes(4).toString('hex');
     const logId = `${now}_${rand}`;
-    await access_logs.put(`log_${logId}`, JSON.stringify({
+    await ug_access_logs.put(`log_${logId}`, JSON.stringify({
       id: logId, appId, appName,
       deviceFingerprint: fingerprint, ip,
       action: 'verify', result, reason,
@@ -305,10 +305,10 @@ async function handleLogs(method, url) {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 256);
   const cursor = url.searchParams.get('cursor') || undefined;
 
-  const listResult = await access_logs.list({ prefix: 'log_', limit: 256, cursor });
+  const listResult = await ug_access_logs.list({ prefix: 'log_', limit: 256, cursor });
   const allMatched = [];
   for (const key of listResult.keys) {
-    const logData = await access_logs.get(key.name, { type: 'json' });
+    const logData = await ug_access_logs.get(key.name, { type: 'json' });
     if (!logData) continue;
     if (filterAppId && logData.appId !== filterAppId) continue;
     if (filterResult && logData.result !== filterResult) continue;
@@ -321,11 +321,11 @@ async function handleLogs(method, url) {
   // 日志清理：若应用设置了保留条数上限
   if (filterAppId && allMatched.length > 0) {
     try {
-      const appData = await app_store.get(`app_${filterAppId}`, { type: 'json' });
+      const appData = await ug_app_store.get(`app_${filterAppId}`, { type: 'json' });
       const logRetention = appData?.logRetention;
       if (logRetention > 0 && allMatched.length > logRetention) {
         for (const log of allMatched.slice(logRetention)) {
-          await access_logs.delete(log._key);
+          await ug_access_logs.delete(log._key);
         }
       }
     } catch { /* 清理失败不影响查询 */ }

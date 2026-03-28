@@ -6,16 +6,16 @@ export async function onRequestGet({ params }) {
   try {
     const { appId } = params;
 
-    const appData = await app_store.get(`app_${appId}`, { type: 'json' });
+    const appData = await ug_app_store.get(`app_${appId}`, { type: 'json' });
     if (!appData) {
       return jsonResponse({ success: false, error: '应用不存在' }, 404);
     }
 
-    const deviceList = await app_store.get(`devices_${appId}`, { type: 'json' }) || [];
+    const deviceList = await ug_app_store.get(`devices_${appId}`, { type: 'json' }) || [];
     const devices = [];
 
     for (const fingerprint of deviceList) {
-      const device = await app_store.get(`device_${appId}_${fingerprint}`, { type: 'json' });
+      const device = await ug_app_store.get(`device_${appId}_${fingerprint}`, { type: 'json' });
       if (device) devices.push(device);
     }
 
