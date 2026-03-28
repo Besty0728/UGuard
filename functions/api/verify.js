@@ -3,10 +3,7 @@ import { getKV, jsonResponse } from '../_shared.js';
 export async function onRequestPost(context) {
   const { request } = context;
   const kv = getKV(context);
-  const ip =
-    request.headers.get('CF-Connecting-IP') ||
-    request.headers.get('X-Forwarded-For') ||
-    'unknown';
+  const ip = getClientIp(request);
 
   try {
     const body = await request.json();
@@ -129,6 +126,36 @@ export async function onRequestPost(context) {
     console.error('[verify] request failed', error);
     return jsonResponse({ valid: false, reason: 'internal_error' }, 500);
   }
+}
+
+function getClientIp(request) {
+  if (request?.eo?.clientIp) {
+    return String(request.eo.clientIp).trim();
+  }
+
+  const directIp =
+    request.headers.get('EO-Client-IP') ||
+    request.headers.get('EO-Connecting-IP') ||
+    request.headers.get('X-Real-IP') ||
+    request.headers.get('X-Client-IP');
+
+  if (directIp) {
+    return directIp.trim();
+  }
+
+  const forwardedFor = request.headers.get('X-Forwarded-For');
+  if (forwardedFor) {
+    const firstIp = forwardedFor
+      .split(',')
+      .map((item) => item.trim())
+      .find(Boolean);
+
+    if (firstIp) {
+      return firstIp;
+    }
+  }
+
+  return 'unknown';
 }
 
 async function writeLog(kv, appId, appName, fingerprint, ip, result, reason, request) {
