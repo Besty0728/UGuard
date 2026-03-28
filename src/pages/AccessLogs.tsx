@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getApps, getLogs, deleteLog } from '@/lib/api';
+import { deleteLog, getApps, getLogs } from '@/lib/api';
+import { useI18n } from '@/contexts/I18nContext';
 import { StatusBadge } from '@/components/StatusBadge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
@@ -28,109 +29,166 @@ export function AccessLogs() {
   const [cursor, setCursor] = useState<string>();
   const [hasMore, setHasMore] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const { language } = useI18n();
 
-  useEffect(() => { getApps().then(setApps).catch(() => {}); }, []);
-  useEffect(() => { load(true); }, [fApp, fResult]);
+  const text =
+    language === 'zh'
+      ? {
+          title: '访问日志',
+          allApps: '全部应用',
+          allResults: '全部结果',
+          loadFailed: '加载失败',
+          deleteFailed: '删除失败',
+          empty: '暂无日志',
+          time: '时间',
+          app: '应用',
+          result: '结果',
+          reason: '原因',
+          location: '国家/地区',
+          fingerprint: '指纹',
+          loadMore: '加载更多日志 ↓',
+          loadingMore: '加载中...',
+          delete: '删 除',
+          results: [
+            { value: '', label: '全部结果' },
+            { value: 'allowed', label: '通过' },
+            { value: 'denied', label: '拒绝' },
+            { value: 'expired', label: '过期' },
+            { value: 'banned', label: '封禁' },
+            { value: 'max_devices', label: '超限' },
+          ],
+        }
+      : {
+          title: 'Access logs',
+          allApps: 'All apps',
+          allResults: 'All results',
+          loadFailed: 'Failed to load logs',
+          deleteFailed: 'Failed to delete log',
+          empty: 'No logs yet',
+          time: 'Time',
+          app: 'App',
+          result: 'Result',
+          reason: 'Reason',
+          location: 'Country / Region',
+          fingerprint: 'Fingerprint',
+          loadMore: 'Load more logs ↓',
+          loadingMore: 'Loading...',
+          delete: 'Delete',
+          results: [
+            { value: '', label: 'All results' },
+            { value: 'allowed', label: 'Allowed' },
+            { value: 'denied', label: 'Denied' },
+            { value: 'expired', label: 'Expired' },
+            { value: 'banned', label: 'Banned' },
+            { value: 'max_devices', label: 'Limit reached' },
+          ],
+        };
+
+  useEffect(() => {
+    getApps().then(setApps).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    load(true);
+  }, [fApp, fResult]);
 
   async function load(reset = false) {
     try {
       setLoading(true);
-      const r = await getLogs({ appId: fApp || undefined, result: fResult || undefined, limit: 50, cursor: reset ? undefined : cursor });
-      setLogs(reset ? r.logs : [...logs, ...r.logs]);
-      setCursor(r.cursor); setHasMore(!!r.cursor);
-    } catch (e) { setError(e instanceof Error ? e.message : '\u5931\u8d25'); }
-    finally { setLoading(false); }
+      const response = await getLogs({
+        appId: fApp || undefined,
+        result: fResult || undefined,
+        limit: 50,
+        cursor: reset ? undefined : cursor,
+      });
+      setLogs(reset ? response.logs : [...logs, ...response.logs]);
+      setCursor(response.cursor);
+      setHasMore(Boolean(response.cursor));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : text.loadFailed);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleDelete(logId: string) {
     try {
       setDeleting(logId);
       await deleteLog(logId);
-      setLogs(prev => prev.filter(l => l.id !== logId));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '\u5220\u9664\u5931\u8d25');
+      setLogs((prev) => prev.filter((log) => log.id !== logId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : text.deleteFailed);
     } finally {
       setDeleting(null);
     }
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-2xl font-display font-bold text-dark tracking-tight">{'\u8bbf\u95ee\u65e5\u5fd7'}</h2>
+    <div className="animate-fade-in space-y-5">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-dark">{text.title}</h2>
         <div className="flex gap-3">
-          <CustomDropdown 
-            value={fApp} 
-            onChange={setFApp} 
-            options={[
-              { value: '', label: '\u5168\u90e8\u5e94\u7528' },
-              ...apps.map(a => ({ value: a.id, label: a.name }))
-            ]}
-            className=""
+          <CustomDropdown
+            value={fApp}
+            onChange={setFApp}
+            options={[{ value: '', label: text.allApps }, ...apps.map((app) => ({ value: app.id, label: app.name }))]}
           />
-          <CustomDropdown 
-            value={fResult} 
-            onChange={setFResult} 
-            options={[
-              { value: '', label: '\u5168\u90e8\u7ed3\u679c' },
-              { value: 'allowed', label: '\u901a\u8fc7' },
-              { value: 'denied', label: '\u62d2\u7edd' },
-              { value: 'expired', label: '\u8fc7\u671f' },
-              { value: 'banned', label: '\u5c01\u7981' },
-              { value: 'max_devices', label: '\u8d85\u9650' }
-            ]}
-            className="min-w-[140px]"
-          />
+          <CustomDropdown value={fResult} onChange={setFResult} options={text.results} className="min-w-[140px]" />
           <RefreshButton onClick={() => load(true)} disabled={loading} className="shrink-0" />
         </div>
       </div>
 
       {error && <p className="text-[13px] text-red-500">{error}</p>}
 
-      {loading && logs.length === 0 ? <LoadingSpinner />
-      : logs.length === 0 ? <EmptyState title={'\u6682\u65e0\u65e5\u5fd7'} />
-      : (
+      {loading && logs.length === 0 ? (
+        <LoadingSpinner />
+      ) : logs.length === 0 ? (
+        <EmptyState title={text.empty} />
+      ) : (
         <div className="card overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead><tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] text-dark/50 font-semibold uppercase tracking-wider">
-              <th className="px-6 py-4">{'\u65f6\u95f4'}</th>
-              <th className="px-6 py-4">{'\u5e94\u7528'}</th>
-              <th className="px-6 py-4">{'\u7ed3\u679c'}</th>
-              <th className="px-6 py-4">{'\u539f\u56e0'}</th>
-              <th className="px-6 py-4">IP</th>
-              <th className="px-6 py-4">{'\u56fd\u5bb6/\u5730\u533a'}</th>
-              <th className="px-6 py-4">{'\u6307\u7eb9'}</th>
-              <th className="px-6 py-4 w-12"></th>
-            </tr></thead>
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] font-semibold uppercase tracking-wider text-dark/50">
+                <th className="px-6 py-4">{text.time}</th>
+                <th className="px-6 py-4">{text.app}</th>
+                <th className="px-6 py-4">{text.result}</th>
+                <th className="px-6 py-4">{text.reason}</th>
+                <th className="px-6 py-4">IP</th>
+                <th className="px-6 py-4">{text.location}</th>
+                <th className="px-6 py-4">{text.fingerprint}</th>
+                <th className="w-12 px-6 py-4"></th>
+              </tr>
+            </thead>
             <tbody>
-              {logs.map(l => (
-                <tr key={l.id} className="border-b border-neutral-100/40 last:border-0 hover:bg-white/60 transition-all duration-200 group">
-                  <td className="px-6 py-4 text-dark/60 font-medium text-[13px] whitespace-nowrap">{formatDate(l.timestamp)}</td>
-                  <td className="px-6 py-4 text-[14px] text-dark font-semibold">{l.appName || '-'}</td>
-                  <td className="px-6 py-4"><StatusBadge status={l.result} /></td>
-                  <td className="px-6 py-4 text-dark/60 font-medium text-[13px]">{l.reason || '-'}</td>
-                  <td className="px-6 py-4 text-dark/50 font-mono text-[13px] font-medium">{l.ip}</td>
-                  <td className="px-6 py-4 text-[13px] text-dark/60 font-medium">
-                    <div>{formatCountry(l)}</div>
-                    <div className="text-[12px] text-dark/40">{formatRegion(l)}</div>
+              {logs.map((log) => (
+                <tr key={log.id} className="group border-b border-neutral-100/40 transition-all duration-200 last:border-0 hover:bg-white/60">
+                  <td className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-dark/60">{formatDate(log.timestamp, language)}</td>
+                  <td className="px-6 py-4 text-[14px] font-semibold text-dark">{log.appName || '-'}</td>
+                  <td className="px-6 py-4"><StatusBadge status={log.result} /></td>
+                  <td className="px-6 py-4 text-[13px] font-medium text-dark/60">{log.reason || '-'}</td>
+                  <td className="px-6 py-4 font-mono text-[13px] font-medium text-dark/50">{log.ip}</td>
+                  <td className="px-6 py-4 text-[13px] font-medium text-dark/60">
+                    <div>{formatCountry(log)}</div>
+                    <div className="text-[12px] text-dark/40">{formatRegion(log)}</div>
                   </td>
-                  <td className="px-6 py-4 text-dark/40 font-mono text-[12px] font-medium">{l.deviceFingerprint.slice(0, 16)}...</td>
+                  <td className="px-6 py-4 font-mono text-[12px] font-medium text-dark/40">{log.deviceFingerprint.slice(0, 16)}...</td>
                   <td className="px-6 py-4 text-right">
                     <DeleteButton
-                      onClick={() => handleDelete(l.id)}
-                      disabled={deleting === l.id}
-                      className="scale-[0.7] origin-right opacity-0 group-hover:opacity-100 transition-all"
-                      text={deleting === l.id ? '...' : '\u5220 \u9664'}
+                      onClick={() => handleDelete(log.id)}
+                      disabled={deleting === log.id}
+                      className="origin-right scale-[0.7] opacity-0 transition-all group-hover:opacity-100"
+                      text={deleting === log.id ? '...' : text.delete}
                     />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
           {hasMore && (
-            <div className="px-6 py-6 border-t border-neutral-100/60 bg-white/40 text-center">
+            <div className="border-t border-neutral-100/60 bg-white/40 px-6 py-6 text-center">
               <ThemeButton onClick={() => load(false)} disabled={loading}>
-                {loading ? '\u52a0\u8f7d\u4e2d...' : '\u52a0\u8f7d\u66f4\u591a\u65e5\u5fd7 \u2193'}
+                {loading ? text.loadingMore : text.loadMore}
               </ThemeButton>
             </div>
           )}

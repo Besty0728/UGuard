@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Option {
   value: string;
@@ -13,17 +14,19 @@ interface CustomDropdownProps {
   placeholder?: string;
 }
 
-export const CustomDropdown: React.FC<CustomDropdownProps> = ({ 
-  options, 
-  value, 
-  onChange, 
-  className = "",
-  placeholder = "请选择"
+export const CustomDropdown: React.FC<CustomDropdownProps> = ({
+  options,
+  value,
+  onChange,
+  className = '',
+  placeholder,
 }) => {
+  const { language } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find((option) => option.value === value);
+  const fallbackPlaceholder = placeholder ?? (language === 'zh' ? '请选择' : 'Select');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -31,28 +34,16 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
     <div className={`dropdown-container ${className}`} ref={dropdownRef}>
-      <div 
-        className={`dropdown-trigger ${isOpen ? 'active' : ''}`} 
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
-        <svg 
-          className="dropdown-arrow" 
-          width="12" 
-          height="12" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="3" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        >
+      <div className={`dropdown-trigger ${isOpen ? 'active' : ''}`} onClick={() => setIsOpen((open) => !open)}>
+        <span className="truncate">{selectedOption ? selectedOption.label : fallbackPlaceholder}</span>
+        <svg className="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 9l6 6 6-6" />
         </svg>
       </div>

@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getApps, getLogs } from '@/lib/api';
+import { useI18n } from '@/contexts/I18nContext';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RefreshButton } from '@/components/common/Buttons';
@@ -16,116 +17,152 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [chartApp, setChartApp] = useState('all');
   const [granularity, setGranularity] = useState<Granularity>('24h');
+  const { language } = useI18n();
 
-  const loadData = async () => {
+  const text =
+    language === 'zh'
+      ? {
+          title: '概览',
+          totalApps: '总应用',
+          active: '正常',
+          suspended: '暂停',
+          abnormalLogs: '异常记录',
+          trendTitle: '访问趋势',
+          trendSubtitle: '验证请求变化',
+          allApps: '所有应用',
+          recentLogs: '最近日志',
+          viewAll: '查看全部 →',
+          noLogs: '暂无日志',
+          app: '应用',
+          result: '结果',
+          time: '时间',
+          unit: '单位: 次',
+        }
+      : {
+          title: 'Overview',
+          totalApps: 'Apps',
+          active: 'Active',
+          suspended: 'Suspended',
+          abnormalLogs: 'Abnormal logs',
+          trendTitle: 'Verification trend',
+          trendSubtitle: 'Traffic over time',
+          allApps: 'All apps',
+          recentLogs: 'Recent logs',
+          viewAll: 'View all →',
+          noLogs: 'No logs yet',
+          app: 'App',
+          result: 'Result',
+          time: 'Time',
+          unit: 'Unit: hits',
+        };
+
+  async function loadData() {
     setLoading(true);
     try {
-      const [appsRes, logsRes] = await Promise.all([
-        getApps(),
-        getLogs({ limit: 300 })
-      ]);
-      setApps(appsRes);
-      setLogs(logsRes.logs);
-    } catch (e) {
-      console.error(e);
+      const [appsResponse, logsResponse] = await Promise.all([getApps(), getLogs({ limit: 300 })]);
+      setApps(appsResponse);
+      setLogs(logsResponse.logs);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  // 图表数据转换逻辑
   const chartData = useMemo(() => {
     const now = new Date();
     const data: { label: string; count: number }[] = [];
-    const filteredLogs = logs.filter(l => chartApp === 'all' || l.appId === chartApp);
+    const filteredLogs = logs.filter((log) => chartApp === 'all' || log.appId === chartApp);
 
     if (granularity === '6h') {
-      // 6小时，每20分钟一个点 (18个点)
-      for (let i = 17; i >= 0; i--) {
-        const time = new Date(now.getTime() - i * 20 * 60 * 1000);
+      for (let index = 17; index >= 0; index -= 1) {
+        const time = new Date(now.getTime() - index * 20 * 60 * 1000);
         const startTime = new Date(time.getTime() - 20 * 60 * 1000);
-        const count = filteredLogs.filter(l => {
-          const d = new Date(l.timestamp);
-          return d > startTime && d <= time;
+        const count = filteredLogs.filter((log) => {
+          const date = new Date(log.timestamp);
+          return date > startTime && date <= time;
         }).length;
         data.push({ label: `${time.getHours()}:${time.getMinutes().toString().padStart(2, '0')}`, count });
       }
     } else if (granularity === '24h') {
-      // 24小时，每小时一个点
-      for (let i = 23; i >= 0; i--) {
-        const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+      for (let index = 23; index >= 0; index -= 1) {
+        const time = new Date(now.getTime() - index * 60 * 60 * 1000);
         const startTime = new Date(time.getTime() - 60 * 60 * 1000);
-        const count = filteredLogs.filter(l => {
-          const d = new Date(l.timestamp);
-          return d > startTime && d <= time;
+        const count = filteredLogs.filter((log) => {
+          const date = new Date(log.timestamp);
+          return date > startTime && date <= time;
         }).length;
         data.push({ label: `${time.getHours()}h`, count });
       }
     } else {
-      // 7天，每天一个点
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const dateStr = d.toDateString();
-        const count = filteredLogs.filter(l => new Date(l.timestamp).toDateString() === dateStr).length;
-        data.push({ label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), count });
+      for (let index = 6; index >= 0; index -= 1) {
+        const date = new Date(now.getTime() - index * 24 * 60 * 60 * 1000);
+        const dateStr = date.toDateString();
+        const count = filteredLogs.filter((log) => new Date(log.timestamp).toDateString() === dateStr).length;
+        data.push({
+          label: date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+          count,
+        });
       }
     }
-    return data;
-  }, [logs, chartApp, granularity]);
 
-  if (loading) return <LoadingSpinner />;
+    return data;
+  }, [chartApp, granularity, language, logs]);
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   const stats = [
-    { label: '总应用', value: apps.length, accent: 'text-primary-600' },
-    { label: '正常', value: apps.filter(a => a.status === 'active').length, accent: 'text-emerald-600' },
-    { label: '暂停', value: apps.filter(a => a.status === 'suspended').length, accent: 'text-amber-600' },
-    { label: '异常记录', value: logs.filter(l => l.result !== 'allowed').length, accent: 'text-red-500' },
+    { label: text.totalApps, value: apps.length, accent: 'text-primary-600' },
+    { label: text.active, value: apps.filter((app) => app.status === 'active').length, accent: 'text-emerald-600' },
+    { label: text.suspended, value: apps.filter((app) => app.status === 'suspended').length, accent: 'text-amber-600' },
+    { label: text.abnormalLogs, value: logs.filter((log) => log.result !== 'allowed').length, accent: 'text-red-500' },
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-display font-bold text-dark tracking-tight">概览</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight text-dark">{text.title}</h2>
         <RefreshButton onClick={loadData} disabled={loading} />
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-5">
-        {stats.map(s => (
-          <div key={s.label} className="card px-6 py-5 bg-white/40 border border-neutral-100/60 shadow-glass hover:shadow-glass-hover hover:-translate-y-0.5 transition-all duration-300 group">
-            <p className="text-[13px] font-medium text-dark/50 mb-1.5 uppercase tracking-wider group-hover:text-dark/70 transition-colors">{s.label}</p>
-            <p className={`text-3xl font-display font-bold tracking-tight ${s.accent}`}>{s.value}</p>
+        {stats.map((stat) => (
+          <div key={stat.label} className="card group border border-neutral-100/60 bg-white/40 px-6 py-5 shadow-glass transition-all duration-300 hover:-translate-y-0.5 hover:shadow-glass-hover">
+            <p className="mb-1.5 text-[13px] font-medium uppercase tracking-wider text-dark/50 transition-colors group-hover:text-dark/70">{stat.label}</p>
+            <p className={`font-display text-3xl font-bold tracking-tight ${stat.accent}`}>{stat.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Trend Chart */}
-      <div className="card bg-white/40 backdrop-blur-sm border border-neutral-100/60 shadow-glass overflow-hidden">
+      <div className="card overflow-hidden border border-neutral-100/60 bg-white/40 shadow-glass backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 p-6 pb-2">
           <div>
-            <h3 className="text-[16px] font-bold text-dark mb-1">访问趋势</h3>
-            <p className="text-[12px] font-medium text-dark/40 uppercase tracking-widest">Verification Trend Analysis</p>
+            <h3 className="mb-1 text-[16px] font-bold text-dark">{text.trendTitle}</h3>
+            <p className="text-[12px] font-medium uppercase tracking-widest text-dark/40">{text.trendSubtitle}</p>
           </div>
           <div className="flex items-center gap-3">
             <CustomDropdown
               value={chartApp}
               onChange={setChartApp}
-              options={[
-                { value: 'all', label: '所有应用' },
-                ...apps.map(a => ({ value: a.id, label: a.name }))
-              ]}
-              className=""
+              options={[{ value: 'all', label: text.allApps }, ...apps.map((app) => ({ value: app.id, label: app.name }))]}
             />
-            <div className="flex bg-neutral-100/50 p-1 rounded-[14px] border border-neutral-200/50 h-[42px] items-center">
-              {(['6h', '24h', 'date'] as Granularity[]).map(g => (
+            <div className="flex h-[42px] items-center rounded-[14px] border border-neutral-200/50 bg-neutral-100/50 p-1">
+              {(['6h', '24h', 'date'] as Granularity[]).map((item) => (
                 <button
-                  key={g}
-                  onClick={() => setGranularity(g)}
-                  className={`px-4 h-full text-[12px] font-bold rounded-[10px] transition-all ${granularity === g ? 'bg-white text-amber-600 shadow-sm' : 'text-dark/40 hover:text-dark/60'}`}
+                  key={item}
+                  onClick={() => setGranularity(item)}
+                  className={`h-full rounded-[10px] px-4 text-[12px] font-bold transition-all ${granularity === item ? 'bg-white text-amber-600 shadow-sm' : 'text-dark/40 hover:text-dark/60'}`}
                 >
-                  {g === '6h' ? '6h' : g === '24h' ? '24h' : '7d'}
+                  {item === 'date' ? '7d' : item}
                 </button>
               ))}
             </div>
@@ -133,35 +170,37 @@ export function Dashboard() {
         </div>
 
         <div className="relative h-[260px] w-full px-6 pb-6 pt-2">
-          <TrendChart data={chartData} />
+          <TrendChart data={chartData} unitLabel={text.unit} tooltipSuffix={language === 'zh' ? '次' : 'hits'} />
         </div>
       </div>
 
-      {/* Recent logs */}
       <div className="card overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100/60 bg-white/40">
-          <span className="text-[15px] font-bold text-dark/90 tracking-tight">最近日志</span>
-          <Link to="/logs" className="text-[13px] font-semibold text-amber-600 hover:text-amber-700 transition-colors">查看全部 &rarr;</Link>
+        <div className="flex items-center justify-between border-b border-neutral-100/60 bg-white/40 px-6 py-5">
+          <span className="text-[15px] font-bold tracking-tight text-dark/90">{text.recentLogs}</span>
+          <Link to="/logs" className="text-[13px] font-semibold text-amber-600 transition-colors hover:text-amber-700">
+            {text.viewAll}
+          </Link>
         </div>
+
         {logs.length === 0 ? (
-          <p className="px-6 py-10 text-[14px] font-medium text-dark/40 text-center">暂无日志</p>
+          <p className="px-6 py-10 text-center text-[14px] font-medium text-dark/40">{text.noLogs}</p>
         ) : (
-          <table className="w-full text-left border-collapse">
+          <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] text-dark/50 font-semibold uppercase tracking-wider">
-                <th className="px-6 py-4">应用</th>
-                <th className="px-6 py-4">结果</th>
+              <tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] font-semibold uppercase tracking-wider text-dark/50">
+                <th className="px-6 py-4">{text.app}</th>
+                <th className="px-6 py-4">{text.result}</th>
                 <th className="px-6 py-4">IP</th>
-                <th className="px-6 py-4">时间</th>
+                <th className="px-6 py-4">{text.time}</th>
               </tr>
             </thead>
             <tbody>
-              {logs.slice(0, 8).map(l => (
-                <tr key={l.id} className="border-b border-neutral-100/40 last:border-0 hover:bg-white/60 transition-all duration-200">
-                  <td className="px-6 py-4 text-[14px] font-semibold text-dark/90">{l.appName || '-'}</td>
-                  <td className="px-6 py-4"><StatusBadge status={l.result} /></td>
-                  <td className="px-6 py-4 text-dark/50 font-mono text-[13px] font-medium">{l.ip}</td>
-                  <td className="px-6 py-4 text-dark/60 font-medium text-[13px]">{timeAgo(l.timestamp)}</td>
+              {logs.slice(0, 8).map((log) => (
+                <tr key={log.id} className="border-b border-neutral-100/40 transition-all duration-200 last:border-0 hover:bg-white/60">
+                  <td className="px-6 py-4 text-[14px] font-semibold text-dark/90">{log.appName || '-'}</td>
+                  <td className="px-6 py-4"><StatusBadge status={log.result} /></td>
+                  <td className="px-6 py-4 font-mono text-[13px] font-medium text-dark/50">{log.ip}</td>
+                  <td className="px-6 py-4 text-[13px] font-medium text-dark/60">{timeAgo(log.timestamp, language)}</td>
                 </tr>
               ))}
             </tbody>
@@ -172,13 +211,19 @@ export function Dashboard() {
   );
 }
 
-// 内部折线图组件 (琥珀色平滑贝塞尔曲线版 - 极致优化版)
-function TrendChart({ data }: { data: { label: string; count: number }[] }) {
-  // 动态计算量程
-  const maxVal = Math.max(...data.map(d => d.count), 5);
+function TrendChart({
+  data,
+  unitLabel,
+  tooltipSuffix,
+}: {
+  data: { label: string; count: number }[];
+  unitLabel: string;
+  tooltipSuffix: string;
+}) {
+  const maxVal = Math.max(...data.map((item) => item.count), 5);
   const roundedMax = Math.ceil(maxVal / 5) * 5;
   const yTicks = [0, roundedMax * 0.2, roundedMax * 0.4, roundedMax * 0.6, roundedMax * 0.8, roundedMax];
-  
+
   const width = 1000;
   const height = 240;
   const paddingLeft = 50;
@@ -189,105 +234,90 @@ function TrendChart({ data }: { data: { label: string; count: number }[] }) {
   const innerWidth = width - paddingLeft - paddingRight;
   const innerHeight = height - paddingTop - paddingBottom;
 
-  const points = data.map((d, i) => {
-    const x = paddingLeft + (i * innerWidth) / (data.length - 1);
-    const y = paddingTop + innerHeight - (d.count / roundedMax) * innerHeight;
+  const points = data.map((item, index) => {
+    const x = paddingLeft + (index * innerWidth) / Math.max(data.length - 1, 1);
+    const y = paddingTop + innerHeight - (item.count / roundedMax) * innerHeight;
     return { x, y };
   });
 
-  // 平滑曲线生成逻辑
-  const getBezierPath = (pts: {x: number, y: number}[]) => {
-    if (pts.length < 2) return "";
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = pts[i];
-        const p1 = pts[i + 1];
-        const cp1x = p0.x + (p1.x - p0.x) / 2.5;
-        const cp2x = p1.x - (p1.x - p0.x) / 2.5;
-        d += ` C ${cp1x} ${p0.y}, ${cp2x} ${p1.y}, ${p1.x} ${p1.y}`;
+  function getBezierPath(pathPoints: { x: number; y: number }[]) {
+    if (pathPoints.length < 2) {
+      return '';
     }
-    return d;
-  };
+
+    let path = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
+    for (let index = 0; index < pathPoints.length - 1; index += 1) {
+      const p0 = pathPoints[index];
+      const p1 = pathPoints[index + 1];
+      const cp1x = p0.x + (p1.x - p0.x) / 2.5;
+      const cp2x = p1.x - (p1.x - p0.x) / 2.5;
+      path += ` C ${cp1x} ${p0.y}, ${cp2x} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    return path;
+  }
 
   const pathD = getBezierPath(points);
-  const areaD = pathD + ` L ${points[points.length - 1]?.x} ${paddingTop + innerHeight} L ${points[0]?.x} ${paddingTop + innerHeight} Z`;
+  const areaD = points.length > 0
+    ? `${pathD} L ${points[points.length - 1].x} ${paddingTop + innerHeight} L ${points[0].x} ${paddingTop + innerHeight} Z`
+    : '';
 
   return (
-    <div className="w-full h-full relative group select-none">
-      {/* Y-Axis Unit */}
-      <div className="absolute top-2 left-2 text-[11px] font-bold text-dark/25 uppercase tracking-widest">单位: 次</div>
-      
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+    <div className="group relative h-full w-full select-none">
+      <div className="absolute left-2 top-2 text-[11px] font-bold uppercase tracking-widest text-dark/25">{unitLabel}</div>
+
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" preserveAspectRatio="none">
         <defs>
           <linearGradient id="amber-gradient-v2" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.15" />
             <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
           </linearGradient>
         </defs>
-        
-        {/* Grid Lines & Y Labels */}
+
         <g>
-          {yTicks.map(val => {
-            const y = paddingTop + innerHeight - (val / roundedMax) * innerHeight;
+          {yTicks.map((value) => {
+            const y = paddingTop + innerHeight - (value / roundedMax) * innerHeight;
             return (
-              <React.Fragment key={val}>
+              <React.Fragment key={value}>
                 <line x1={paddingLeft} y1={y} x2={width - paddingRight} y2={y} stroke="rgba(0,0,0,0.03)" />
-                <text x={paddingLeft - 12} y={y + 4} textAnchor="end" className="text-[12px] font-bold fill-dark/20">{Math.round(val)}</text>
+                <text x={paddingLeft - 12} y={y + 4} textAnchor="end" className="fill-dark/20 text-[12px] font-bold">
+                  {Math.round(value)}
+                </text>
               </React.Fragment>
             );
           })}
         </g>
 
-        {/* Vertical Last Line */}
         {points.length > 0 && (
-          <line 
-            x1={points[points.length-1].x} 
-            y1={paddingTop} 
-            x2={points[points.length-1].x} 
-            y2={paddingTop + innerHeight} 
-            stroke="rgba(0,0,0,0.06)" 
-            strokeDasharray="4 4" 
-          />
+          <line x1={points[points.length - 1].x} y1={paddingTop} x2={points[points.length - 1].x} y2={paddingTop + innerHeight} stroke="rgba(0,0,0,0.06)" strokeDasharray="4 4" />
         )}
 
-        {/* Path Area */}
-        {points.length > 0 && (
-          <path d={areaD} fill="url(#amber-gradient-v2)" className="transition-all duration-700 ease-in-out" />
-        )}
-        
-        {/* Path Line */}
-        {points.length > 0 && (
-          <path d={pathD} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-700 ease-in-out opacity-80" />
-        )}
+        {points.length > 0 && <path d={areaD} fill="url(#amber-gradient-v2)" className="transition-all duration-700 ease-in-out" />}
+        {points.length > 0 && <path d={pathD} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 transition-all duration-700 ease-in-out" />}
 
-        {/* X Axis Labels - Optimized distribution */}
-        {points.map((p, i) => {
-          const showLabel = i % Math.ceil(data.length / 6) === 0 || i === points.length - 1;
-          if (!showLabel) return null;
+        {points.map((point, index) => {
+          const showLabel = index % Math.ceil(data.length / 6) === 0 || index === points.length - 1;
+          if (!showLabel) {
+            return null;
+          }
+
           return (
-            <text 
-              key={i}
-              x={p.x} 
-              y={height - 10} 
-              textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"} 
-              className="text-[12px] font-bold fill-dark/25"
+            <text
+              key={index}
+              x={point.x}
+              y={height - 10}
+              textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}
+              className="fill-dark/25 text-[12px] font-bold"
             >
-              {data[i].label}
+              {data[index].label}
             </text>
           );
         })}
 
-        {/* Hover Points */}
-        {points.map((p, i) => (
-          <g key={`dot-${i}`} className="group/dot">
-            <circle cx={p.x} cy={p.y} r="20" fill="transparent" className="cursor-pointer" />
-            <circle 
-              cx={p.x} 
-              cy={p.y} 
-              r="4" 
-              className="fill-white stroke-amber-500 stroke-[2] opacity-0 group-hover/dot:opacity-100 transition-opacity pointer-events-none" 
-            />
-            <title>{`${data[i].label}: ${data[i].count} 次`}</title>
+        {points.map((point, index) => (
+          <g key={`dot-${index}`} className="group/dot">
+            <circle cx={point.x} cy={point.y} r="20" fill="transparent" className="cursor-pointer" />
+            <circle cx={point.x} cy={point.y} r="4" className="pointer-events-none fill-white stroke-amber-500 stroke-[2] opacity-0 transition-opacity group-hover/dot:opacity-100" />
+            <title>{`${data[index].label}: ${data[index].count} ${tooltipSuffix}`}</title>
           </g>
         ))}
       </svg>

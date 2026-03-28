@@ -1,11 +1,13 @@
 import type { AccessWindow, GeoRestriction } from '@/types';
+import { getLocale } from '@/lib/i18n';
+import type { Language } from '@/lib/i18n';
 
-export function formatDate(dateStr: string | null): string {
+export function formatDate(dateStr: string | null, language: Language = 'zh'): string {
   if (!dateStr) {
-    return '永不过期';
+    return language === 'zh' ? '永不过期' : 'Never expires';
   }
 
-  return new Date(dateStr).toLocaleString('zh-CN', {
+  return new Date(dateStr).toLocaleString(getLocale(language), {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -14,53 +16,88 @@ export function formatDate(dateStr: string | null): string {
   });
 }
 
-export function timeAgo(dateStr: string): string {
+export function timeAgo(dateStr: string, language: Language = 'zh'): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
 
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return `${minutes} 分钟前`;
+  if (minutes < 1) {
+    return language === 'zh' ? '刚刚' : 'Just now';
+  }
+
+  if (minutes < 60) {
+    return language === 'zh' ? `${minutes} 分钟前` : `${minutes} min ago`;
+  }
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} 小时前`;
+  if (hours < 24) {
+    return language === 'zh' ? `${hours} 小时前` : `${hours} hr ago`;
+  }
 
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} 天前`;
+  if (days < 30) {
+    return language === 'zh' ? `${days} 天前` : `${days} day${days === 1 ? '' : 's'} ago`;
+  }
 
-  return formatDate(dateStr);
+  return formatDate(dateStr, language);
 }
 
-export function formatAccessWindow(accessWindow?: AccessWindow): string {
+export function formatAccessWindow(accessWindow: AccessWindow | undefined, language: Language = 'zh'): string {
   if (!accessWindow?.enabled) {
-    return '全天开放';
+    return language === 'zh' ? '全天开放' : 'Open all day';
   }
 
   return `${padHour(accessWindow.startHour)}:00 - ${padHour(accessWindow.endHour)}:00 (${accessWindow.timezone})`;
 }
 
-export function formatGeoRestriction(geoRestriction?: GeoRestriction): string {
+export function formatGeoRestriction(
+  geoRestriction: GeoRestriction | undefined,
+  language: Language = 'zh',
+): string {
   if (!geoRestriction?.enabled) {
-    return '不限制地区';
+    return language === 'zh' ? '不限制地区' : 'No region restriction';
   }
 
-  const countries = geoRestriction.allowedCountries.length > 0 ? geoRestriction.allowedCountries.join(', ') : '任意国家';
-  const regions = geoRestriction.allowedRegions.length > 0 ? geoRestriction.allowedRegions.join(', ') : '任意地区';
+  const countries =
+    geoRestriction.allowedCountries.length > 0
+      ? geoRestriction.allowedCountries.join(', ')
+      : language === 'zh'
+        ? '任意国家'
+        : 'Any country';
+  const regions =
+    geoRestriction.allowedRegions.length > 0
+      ? geoRestriction.allowedRegions.join(', ')
+      : language === 'zh'
+        ? '任意地区'
+        : 'Any region';
+
   return `${countries} / ${regions}`;
 }
 
-export function statusText(status: string): string {
-  return (
-    {
-      active: '正常',
-      suspended: '已暂停',
-      banned: '已封禁',
-      allowed: '通过',
-      denied: '拒绝',
-      expired: '已过期',
-      max_devices: '设备超限',
-      revoked: '已吊销',
-    }[status] ?? status
-  );
+export function statusText(status: string, language: Language = 'zh'): string {
+  const labels =
+    language === 'zh'
+      ? {
+          active: '正常',
+          suspended: '已暂停',
+          banned: '已封禁',
+          allowed: '通过',
+          denied: '拒绝',
+          expired: '已过期',
+          max_devices: '设备超限',
+          revoked: '已吊销',
+        }
+      : {
+          active: 'Active',
+          suspended: 'Suspended',
+          banned: 'Banned',
+          allowed: 'Allowed',
+          denied: 'Denied',
+          expired: 'Expired',
+          max_devices: 'Limit reached',
+          revoked: 'Revoked',
+        };
+
+  return labels[status as keyof typeof labels] ?? status;
 }
 
 export function statusColor(status: string): string {
