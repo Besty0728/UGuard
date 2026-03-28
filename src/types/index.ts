@@ -13,6 +13,7 @@ export interface AppInfo {
   logRetention: number; // -1=全部记录, 0=不记录, N>0=保留最近N条
   permissions: { features: string[] };
   token?: string; // 仅详情接口返回
+  deviceCount?: number; // 概览列表同步返回
 }
 
 /** Token 反查索引（对应 KV key: token_{sha256hex}） */

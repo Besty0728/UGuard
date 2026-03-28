@@ -61,4 +61,595 @@
     padding: 1.5rem;
     animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+
+  /* --- Uiverse Buttons --- */
+
+  /* 1. Logout Button (Expandable Circle) */
+  .btn-logout-uiverse {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition-duration: .3s;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #ef4444;
+  }
+
+  .btn-logout-uiverse .sign {
+    width: 100%;
+    transition-duration: .3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-logout-uiverse .sign svg {
+    width: 18px;
+    fill: white;
+  }
+
+  .btn-logout-uiverse .btn-text {
+    position: absolute;
+    right: 0%;
+    width: 0%;
+    opacity: 0;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    transition-duration: .3s;
+    white-space: nowrap;
+  }
+
+  .btn-logout-uiverse:hover {
+    width: 110px;
+    border-radius: 40px;
+  }
+
+  .btn-logout-uiverse:hover .sign {
+    width: 30%;
+    padding-left: 12px;
+  }
+
+  .btn-logout-uiverse:hover .btn-text {
+    opacity: 1;
+    width: 70%;
+    padding-right: 10px;
+  }
+
+  .btn-logout-uiverse:active {
+    transform: translate(2px, 2px);
+  }
+
+  /* 2. Delete Button (Icon Slide) */
+  .btn-delete-uiverse {
+    width: 120px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    background: #ef4444;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    transition: 200ms;
+  }
+
+  .btn-delete-uiverse .btn-text {
+    transform: translateX(25px);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 200ms;
+  }
+
+  .btn-delete-uiverse .icon {
+    position: absolute;
+    border-left: 1px solid #b91c1c;
+    transform: translateX(85px);
+    height: 30px;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 200ms;
+  }
+
+  .btn-delete-uiverse svg {
+    width: 15px;
+    fill: white;
+  }
+
+  .btn-delete-uiverse:hover {
+    background: #dc2626;
+  }
+
+  .btn-delete-uiverse:hover .btn-text {
+    color: transparent;
+  }
+
+  .btn-delete-uiverse:hover .icon {
+    width: 120px;
+    border-left: none;
+    transform: translateX(0);
+  }
+
+  .btn-delete-uiverse:active .icon svg {
+    transform: scale(0.8);
+  }
+
+  /* 3. 3D Buttons (Generic Theme) */
+  .btn-3d-uiverse {
+    --button_radius: 12px;
+    --button_color: #e8e8e8;
+    --button_outline_color: #000000;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--button_radius);
+    background: var(--button_outline_color);
+    position: relative;
+    padding: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .btn-3d-uiverse:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .btn-3d-uiverse .button_top {
+    display: block;
+    box-sizing: border-box;
+    border: 2px solid var(--button_outline_color);
+    border-radius: var(--button_radius);
+    padding: 0.6rem 1.2rem;
+    background: var(--button_color);
+    color: var(--button_outline_color);
+    transform: translateY(-0.25em);
+    transition: transform 0.1s ease;
+    white-space: nowrap;
+  }
+
+  .btn-3d-uiverse:hover:not(:disabled) .button_top {
+    transform: translateY(-0.35em);
+  }
+
+  .btn-3d-uiverse:active:not(:disabled) .button_top {
+    transform: translateY(0);
+  }
+  
+  /* Color Variations for 3D Button */
+  .btn-3d-amber {
+    --button_color: #f59e0b; /* amber-500 */
+    --button_outline_color: #92400e; /* amber-800 */
+  }
+  .btn-3d-amber .button_top {
+    color: #fff;
+  }
+  
+  .btn-3d-gray {
+    --button_color: #f4f4f5; /* zinc-100 */
+    --button_outline_color: #27272a; /* zinc-800 */
+  }
+  .btn-3d-gray .button_top {
+    color: #27272a;
+  }
+  
+  .btn-3d-red {
+    --button_color: #ef4444; /* red-500 */
+    --button_outline_color: #7f1d1d; /* red-900 */
+  }
+  .btn-3d-red .button_top {
+    color: #fff;
+  }
+
+  /* --- Custom Dropdown --- */
+  .dropdown-container {
+    position: relative;
+    user-select: none;
+  }
+
+  .dropdown-trigger {
+    height: 42px;
+    width: 150px;
+    padding: 0 1rem;
+    background: white;
+    box-sizing: border-box;
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 14px;
+    font-weight: 600;
+    color: #3f3f46;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.02);
+  }
+
+  .dropdown-trigger:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .dropdown-trigger.active {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+  }
+
+  .dropdown-arrow {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: #a1a1aa;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
+  }
+
+  .dropdown-trigger.active .dropdown-arrow {
+    transform: rotate(180deg);
+    color: #f59e0b;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 14px;
+    box-shadow: 0 15px 40px -12px rgba(0, 0, 0, 0.12), 0 8px 15px -8px rgba(0, 0, 0, 0.06);
+    z-index: 100;
+    overflow: hidden;
+    transform-origin: top center;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-12px) scale(0.96);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dropdown-trigger.active + .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .dropdown-item {
+    padding: 11px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #52525b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+  }
+
+  .dropdown-item:hover {
+    background: rgba(245, 158, 11, 0.08);
+    color: #f59e0b;
+    padding-left: 18px;
+  }
+
+  .dropdown-item.selected {
+    background: rgba(245, 158, 11, 0.04);
+    color: #f59e0b;
+    font-weight: 700;
+  }
+
+  /* 4. Toggle Switch (Uiverse style) */
+  .btn-toggle-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .btn-toggle-container {
+    width: 44px;
+    height: 24px;
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .btn-toggle-switch {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .btn-toggle-slider {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+  }
+
+  .btn-toggle-input:checked + .btn-toggle-switch {
+    background-color: #34C759; /* Green for ON */
+    border-color: #22a63f;
+  }
+
+  .btn-toggle-input:checked + .btn-toggle-switch .btn-toggle-slider {
+    left: 22px;
+  }
+  
+  .btn-toggle-input:disabled + .btn-toggle-switch {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 5. Sand Loader (Hourglass) Style */
+  .loader-hourglass {
+    --dur: 2s;
+    display: block;
+    margin: auto;
+    width: 6em; /* Balanced size */
+    height: auto;
+  }
+  
+  .loader-hourglass path, 
+  .loader-hourglass g {
+    animation-duration: var(--dur);
+    animation-timing-function: cubic-bezier(0.83, 0, 0.17, 1);
+    animation-iteration-count: infinite;
+  }
+
+  .loader__glare-top { animation-name: glare-top; }
+  .loader__glare-bottom { animation-name: glare-bottom; }
+  .loader__model { animation-name: loader-flip; transform-origin: 12.25px 16.75px; }
+  .loader__motion-thick { animation-name: motion-thick; transform-origin: 26px 26px; }
+  .loader__motion-medium { animation-name: motion-medium; transform-origin: 26px 26px; }
+  .loader__motion-thin { animation-name: motion-thin; transform-origin: 26px 26px; }
+  .loader__sand-drop { animation-name: sand-drop; }
+  .loader__sand-fill { animation-name: sand-fill; }
+  .loader__sand-grain-left { animation-name: sand-grain-left; }
+  .loader__sand-grain-right { animation-name: sand-grain-right; }
+  .loader__sand-line-left { animation-name: sand-line-left; }
+  .loader__sand-line-right { animation-name: sand-line-right; }
+  .loader__sand-mound-top { animation-name: sand-mound-top; }
+  .loader__sand-mound-bottom { animation-name: sand-mound-bottom; transform-origin: 12.25px 31.5px; }
+
+  /* Hourglass Animation Keyframes */
+  @keyframes loader-flip { from { transform: translate(13.75px, 9.25px) rotate(-180deg); } 24%, to { transform: translate(13.75px, 9.25px) rotate(0); } }
+  @keyframes glare-top { from { stroke: rgba(255, 255, 255, 0); } 24%, to { stroke: white; } }
+  @keyframes glare-bottom { from { stroke: white; } 24%, to { stroke: rgba(255, 255, 255, 0); } }
+  @keyframes motion-thick {
+    from { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(0.67turn); }
+    20% { stroke: #f59e0b; stroke-dashoffset: 141.11; transform: rotate(1turn); }
+    40%, to { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(1.33turn); }
+  }
+  @keyframes motion-medium {
+    from, 8% { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(0.5turn); }
+    20% { stroke: white; stroke-dashoffset: 147.53; transform: rotate(0.83turn); }
+    32%, to { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(1.17turn); }
+  }
+  @keyframes motion-thin {
+    from, 4% { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(0.33turn); }
+    24% { stroke: #92400e; stroke-dashoffset: 134.7; transform: rotate(0.67turn); }
+    44%, to { stroke: rgba(255, 255, 255, 0); stroke-dashoffset: 153.94; transform: rotate(1turn); }
+  }
+  @keyframes sand-drop { from, 10% { stroke-dashoffset: 1; } 70%, to { stroke-dashoffset: -107; } }
+  @keyframes sand-fill { from, 10% { stroke-dashoffset: 55; } 70%, to { stroke-dashoffset: -54; } }
+  @keyframes sand-grain-left { from, 10% { stroke-dashoffset: 29; } 70%, to { stroke-dashoffset: -22; } }
+  @keyframes sand-grain-right { from, 10% { stroke-dashoffset: 27; } 70%, to { stroke-dashoffset: -24; } }
+  @keyframes sand-line-left { from, 10% { stroke-dashoffset: 53; } 70%, to { stroke-dashoffset: -55; } }
+  @keyframes sand-line-right { from, 10% { stroke-dashoffset: 14; } 70%, to { stroke-dashoffset: -24.5; } }
+  @keyframes sand-mound-top {
+    from, 10% { transform: translate(0, 0); }
+    15% { transform: translate(0, 1.5px); }
+    51%, to { transform: translate(0, 13px); }
+  }
+  @keyframes sand-mound-bottom { from, 31% { transform: scale(1, 0); } 56%, to { transform: scale(1, 1); } }
+
+  /* 6. Wave Group Input Style */
+  .wave-group {
+    position: relative;
+    width: 100%;
+  }
+
+  .wave-group .input {
+    font-size: 14px;
+    padding: 12px 10px 8px 5px;
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #e5e5e5;
+    background: transparent;
+    color: #3f3f46;
+    font-weight: 500;
+    transition: border-color 0.2s;
+  }
+
+  .wave-group .input:focus { outline: none; }
+
+  .wave-group .label {
+    color: #a1a1aa;
+    font-size: 14px;
+    font-weight: 500;
+    position: absolute;
+    pointer-events: none;
+    left: 5px;
+    top: 10px;
+    display: flex;
+    transition: 0.3s ease all;
+  }
+
+  .wave-group .label-char {
+    transition: 0.2s ease all;
+    transition-delay: calc(var(--index) * .05s);
+  }
+
+  .wave-group .input:focus ~ .label .label-char,
+  .wave-group .input:not(:placeholder-shown) ~ .label .label-char {
+    transform: translateY(-22px);
+    font-size: 12px;
+    color: #f59e0b;
+    font-weight: 700;
+  }
+
+  .wave-group .bar {
+    position: relative;
+    display: block;
+    width: 100%;
+  }
+
+  .wave-group .bar:before, .wave-group .bar:after {
+    content: '';
+    height: 2px;
+    width: 0;
+    bottom: 0;
+    position: absolute;
+    background: #f59e0b;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1) all;
+  }
+
+  .wave-group .bar:before { left: 50%; }
+  .wave-group .bar:after { right: 50%; }
+
+  .wave-group .input:focus ~ .bar:before,
+  .wave-group .input:focus ~ .bar:after {
+    width: 50%;
+  }
+
+  /* 7. Login Box Neon Style (Adapted to Amber) */
+  .login-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    box-sizing: border-box;
+    box-shadow: 0 15px 35px rgba(245, 158, 11, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-box .neon-line {
+    position: absolute;
+    display: block;
+  }
+
+  .login-box .neon-line:nth-child(1) { top: 0; left: -100%; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, #f59e0b); animation: btn-anim1 2s linear infinite; }
+  .login-box .neon-line:nth-child(2) { top: -100%; right: 0; width: 2px; height: 100%; background: linear-gradient(180deg, transparent, #f59e0b); animation: btn-anim2 2s linear infinite; animation-delay: 0.5s; }
+  .login-box .neon-line:nth-child(3) { bottom: 0; right: -100%; width: 100%; height: 2px; background: linear-gradient(270deg, transparent, #f59e0b); animation: btn-anim3 2s linear infinite; animation-delay: 1s; }
+  .login-box .neon-line:nth-child(4) { bottom: -100%; left: 0; width: 2px; height: 100%; background: linear-gradient(360deg, transparent, #f59e0b); animation: btn-anim4 2s linear infinite; animation-delay: 1.5s; }
+
+  @keyframes btn-anim1 { 0% { left: -100%; } 50%, 100% { left: 100%; } }
+  @keyframes btn-anim2 { 0% { top: -100%; } 50%, 100% { top: 100%; } }
+  @keyframes btn-anim3 { 0% { right: -100%; } 50%, 100% { right: 100%; } }
+  @keyframes btn-anim4 { 0% { bottom: -100%; } 50%, 100% { bottom: 100%; } }
+
+  .btn-refresh-uiverse {
+    color: white;
+    background: #18181b;
+    font-weight: 600;
+    border-radius: 14px;
+    font-size: 14px;
+    height: 42px;
+    width: 150px;
+    box-sizing: border-box;
+    padding: 0 1rem;
+    cursor: pointer;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.02);
+  }
+
+  .btn-refresh-uiverse:hover:not(:disabled) {
+    border-color: #f59e0b;
+    color: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.08);
+  }
+
+  .btn-refresh-uiverse:active:not(:disabled) {
+    transform: translateY(0);
+    background: #fafaf9;
+  }
+
+  .btn-refresh-uiverse:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-refresh-uiverse svg {
+    display: inline;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-right: 0.6rem;
+    color: inherit;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-refresh-uiverse:focus svg {
+    animation: spin_uiverse_new 0.5s linear;
+  }
+
+  @keyframes spin_uiverse_new {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* 9. Dashboard Chart Specific Styles */
+  .chart-grid line {
+    stroke: rgba(0, 0, 0, 0.04);
+    stroke-dasharray: 4 4;
+  }
+  .chart-area-gradient {
+    fill: url(#amber-gradient);
+    opacity: 0.1;
+  }
+  .chart-line {
+    stroke: #f59e0b;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.2));
+  }
+  .chart-point {
+    fill: #fff;
+    stroke: #f59e0b;
+    stroke-width: 2.5;
+  }
+
+  /* UI Height Uniformity Finetuning */
+  .btn-3d-uiverse .button_top {
+    padding: 0.5rem 1.2rem;
+    transform: translateY(-0.2em);
+  }
+  .btn-3d-uiverse:hover:not(:disabled) .button_top {
+    transform: translateY(-0.3em);
+  }
 }

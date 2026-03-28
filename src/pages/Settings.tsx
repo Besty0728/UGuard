@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { changePassword } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
+import { ThemeButton } from '@/components/common/Buttons';
+import { WaveInput } from '@/components/common/Inputs';
 
 export function Settings() {
   const [oldPassword, setOldPassword] = useState('');
@@ -70,57 +72,41 @@ export function Settings() {
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-dark/70">
-              原密码 <span className="text-red-500">*</span>
-            </label>
-            <input
+          <div className="space-y-10 pt-4">
+            <WaveInput
+              label="原密码"
               type="password"
-              className="w-full px-4 py-2.5 bg-white/50 border border-neutral-200/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all font-mono shadow-sm"
               value={oldPassword}
               onChange={e => setOldPassword(e.target.value)}
-              placeholder="请输入当前凭证"
               required
             />
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-dark/70">
-              新密码 <span className="text-red-500">*</span>
-            </label>
-            <input
+            <WaveInput
+              label="新密码 (至少6位)"
               type="password"
-              className="w-full px-4 py-2.5 bg-white/50 border border-neutral-200/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all font-mono shadow-sm"
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              placeholder="至少 6 位字符"
               autoComplete="new-password"
               required
             />
-          </div>
 
-          <div className="space-y-1.5 mb-2">
-            <label className="text-[13px] font-medium text-dark/70">
-              确认新密码 <span className="text-red-500">*</span>
-            </label>
-            <input
+            <WaveInput
+              label="确认新密码"
               type="password"
-              className="w-full px-4 py-2.5 bg-white/50 border border-neutral-200/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all font-mono shadow-sm"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="重复输入新密码"
               autoComplete="new-password"
               required
             />
           </div>
 
-          <button
+          <ThemeButton
             type="submit"
             disabled={loading || success}
-            className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-[14px] font-semibold rounded-xl transition-all disabled:opacity-50 shadow-glass disabled:hover:shadow-glass hover:shadow-glass-hover hover:-translate-y-0.5 active:translate-y-0 disabled:active:translate-y-0 mt-2"
+            className="w-full mt-2"
           >
             {loading ? '提交中...' : '提交修改'}
-          </button>
+          </ThemeButton>
         </form>
       </div>
     </div>

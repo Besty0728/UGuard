@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ThemeButton } from './common/Buttons';
 
 interface Props {
   open: boolean;
@@ -23,8 +24,8 @@ export function ConfirmDialog({ open, title, message, confirmText = '确认', ca
         <p className="text-[14px] font-medium text-dark/70 leading-relaxed">{message}</p>
       </div>
       <div className="flex justify-end gap-3 px-6 pb-6 mt-2">
-        <button onClick={onCancel} className="px-4 py-2 text-[14px] font-semibold text-dark/70 border border-transparent hover:border-neutral-200 rounded-xl hover:bg-neutral-100 transition-all">{cancelText}</button>
-        <button onClick={onConfirm} className={`px-4 py-2 text-[14px] font-semibold text-white border border-transparent rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all active:translate-y-0 active:shadow-sm ${danger ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'}`}>{confirmText}</button>
+        <ThemeButton variant="gray" onClick={onCancel}>{cancelText}</ThemeButton>
+        <ThemeButton variant={danger ? 'red' : 'amber'} onClick={onConfirm}>{confirmText}</ThemeButton>
       </div>
     </dialog>
   );

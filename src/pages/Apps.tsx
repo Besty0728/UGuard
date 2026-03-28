@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getApps, createApp } from '@/lib/api';
+import { getApps, createApp, updateApp } from '@/lib/api';
 import { StatusBadge } from '@/components/StatusBadge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
+import { ThemeButton, StatusToggle, RefreshButton } from '@/components/common/Buttons';
+import { WaveInput } from '@/components/common/Inputs';
 import { formatDate } from '@/lib/utils';
 import type { AppInfo } from '@/types';
 
@@ -22,6 +24,7 @@ export function Apps() {
   const [showToken, setShowToken] = useState(false);
   const [token, setToken] = useState('');
   const [copied, setCopied] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -44,6 +47,21 @@ export function Apps() {
     finally { setCreating(false); }
   }
 
+  async function handleToggleStatus(app: AppInfo) {
+    if (toggling) return;
+    
+    setToggling(app.id);
+    try {
+      const newStatus = app.status === 'active' ? 'suspended' : 'active';
+      const updated = await updateApp(app.id, { status: newStatus });
+      setApps(prev => prev.map(a => a.id === updated.id ? updated : a));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '切换失败');
+    } finally {
+      setToggling(null);
+    }
+  }
+
   function copy() { navigator.clipboard.writeText(token); setCopied(true); setTimeout(() => setCopied(false), 2000); }
 
   if (loading) return <LoadingSpinner />;
@@ -52,10 +70,15 @@ export function Apps() {
     <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-display font-bold text-dark tracking-tight">应用管理</h2>
-        <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold text-white bg-amber-500 border border-transparent rounded-xl shadow-sm hover:shadow-glass-hover hover:-translate-y-0.5 transition-all active:translate-y-0 active:shadow-sm hover:bg-amber-600">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          创建应用
-        </button>
+        <div className="flex gap-3 items-center">
+          <RefreshButton onClick={load} disabled={loading} />
+          <ThemeButton onClick={() => setShowCreate(true)}>
+            <div className="flex items-center gap-1.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              创建应用
+            </div>
+          </ThemeButton>
+        </div>
       </div>
 
       {error && <p className="text-[13px] text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
@@ -65,7 +88,8 @@ export function Apps() {
           <table className="w-full text-left border-collapse">
             <thead><tr className="border-b border-neutral-100 bg-white/40 text-[12px] text-dark/60 font-semibold uppercase tracking-wider">
               <th className="px-5 py-4">名称</th>
-              <th className="px-5 py-4">状态</th>
+              <th className="px-5 py-4">结果</th>
+              <th className="px-5 py-4">启用</th>
               <th className="px-5 py-4">设备上限</th>
               <th className="px-5 py-4">到期</th>
               <th className="px-5 py-4 text-right">操作</th>
@@ -77,6 +101,15 @@ export function Apps() {
                     <span className="text-dark font-semibold text-[14px] group-hover:text-amber-600 transition-colors">{app.name}</span>
                   </td>
                   <td className="px-5 py-4"><StatusBadge status={app.status} /></td>
+                  <td className="px-5 py-4">
+                    <div onClick={e => e.stopPropagation()}>
+                      <StatusToggle 
+                        checked={app.status === 'active'} 
+                        onChange={() => handleToggleStatus(app)} 
+                        disabled={toggling === app.id}
+                      />
+                    </div>
+                  </td>
                   <td className="px-5 py-4 text-dark/60 font-medium text-[13px]">{app.maxDevices === 0 ? '不限' : app.maxDevices}</td>
                   <td className="px-5 py-4 text-dark/60 font-medium text-[13px]">{formatDate(app.expiresAt)}</td>
                   <td className="px-5 py-4 text-right">
@@ -96,24 +129,18 @@ export function Apps() {
       {showCreate && (
         <div className="modal-backdrop" onClick={() => setShowCreate(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-display font-bold text-dark mb-5">创建应用</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">应用名称</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="如：我的Unity项目" required autoFocus className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all" />
+            <h3 className="text-lg font-display font-bold text-dark mb-10 text-center tracking-tight">创建新应用</h3>
+            <form onSubmit={handleCreate} className="space-y-10">
+              <WaveInput label="应用名称" value={name} onChange={e => setName(e.target.value)} placeholder=" " required autoFocus />
+              
+              <div className="grid grid-cols-2 gap-x-6 gap-y-10">
+                <WaveInput label="设备上限 (0=不限)" type="number" min={0} value={maxDevices} onChange={e => setMaxDevices(Number(e.target.value))} />
+                <WaveInput label="到期时间 (可选)" type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} />
               </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">设备上限</label>
-                <input type="number" min={0} value={maxDevices} onChange={e => setMaxDevices(Number(e.target.value))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all" />
-                <p className="mt-1.5 text-[12px] font-medium text-dark/40">0 = 不限</p>
-              </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">到期时间 (可选)</label>
-                <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all" />
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-[14px] font-semibold text-dark/70 border border-transparent hover:border-neutral-200 rounded-xl hover:bg-neutral-100 transition-all">取消</button>
-                <button type="submit" disabled={creating} className="px-4 py-2 text-[14px] font-semibold text-white bg-amber-500 border border-transparent rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 transition-all active:translate-y-0 active:shadow-sm">{creating ? '...' : '创 建'}</button>
+
+              <div className="flex justify-end gap-3 pt-6">
+                <ThemeButton type="button" variant="gray" onClick={() => setShowCreate(false)}>取消</ThemeButton>
+                <ThemeButton type="submit" disabled={creating}>{creating ? '正在创建...' : '确 认 创 建'}</ThemeButton>
               </div>
             </form>
           </div>
@@ -134,9 +161,9 @@ export function Apps() {
               </div>
             </div>
             <div className="bg-neutral-50/50 rounded-xl p-4 font-mono text-[13px] text-dark/70 break-all select-all border border-neutral-200/50 shadow-inner">{token}</div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={copy} className="px-4 py-2 text-[13px] font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors shadow-sm">{copied ? '已复制' : '复制 Token'}</button>
-              <button onClick={() => { setShowToken(false); setToken(''); }} className="px-4 py-2 text-[13px] font-semibold text-dark/70 rounded-xl hover:bg-neutral-100 transition-colors">关闭</button>
+            <div className="flex justify-end gap-3 mt-5">
+              <ThemeButton onClick={copy}>{copied ? '已复制' : '复制 Token'}</ThemeButton>
+              <ThemeButton variant="gray" onClick={() => { setShowToken(false); setToken(''); }}>关闭</ThemeButton>
             </div>
           </div>
         </div>

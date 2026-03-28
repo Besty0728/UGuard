@@ -5,6 +5,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
+import { ThemeButton, DeleteButton, BackButton, StatusToggle, RefreshButton } from '@/components/common/Buttons';
+import { WaveInput } from '@/components/common/Inputs';
 import { formatDate, timeAgo } from '@/lib/utils';
 import type { AppInfo, DeviceInfo } from '@/types';
 
@@ -89,20 +91,33 @@ export function AppDetail() {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pb-2">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-display font-bold text-dark tracking-tight">{app.name}</h2>
-            <StatusBadge status={app.status} />
+      <div className="space-y-4">
+        <BackButton onClick={() => navigate('/apps')} />
+        
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-display font-bold text-dark tracking-tight">{app.name}</h2>
+              <StatusBadge status={app.status} />
+            </div>
+            <p className="mt-1.5 text-[12px] font-medium text-dark/40 font-mono">{app.id}</p>
           </div>
-          <p className="mt-1.5 text-[12px] font-medium text-dark/40 font-mono">{app.id}</p>
-        </div>
-        <div className="flex gap-2.5 shrink-0">
-          <button onClick={load} className="px-4 py-2 text-[13px] font-semibold text-dark/70 bg-white border border-neutral-200/60 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all outline-none">刷新</button>
-          <button onClick={openEdit} className="px-4 py-2 text-[13px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/50 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-amber-100 transition-all outline-none">编辑</button>
-          <button onClick={() => setShowToken(true)} className="px-4 py-2 text-[13px] font-semibold text-dark/70 bg-white border border-neutral-200/60 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all outline-none">Token</button>
-          <button onClick={() => setConfirmToggle(true)} className="px-4 py-2 text-[13px] font-semibold text-dark/70 bg-white border border-neutral-200/60 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all outline-none">{app.status === 'active' ? '暂停' : '恢复'}</button>
-          <button onClick={() => setConfirmDel(true)} className="px-4 py-2 text-[13px] font-semibold text-red-600 bg-red-50 border border-red-200/50 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-red-100 transition-all outline-none">删除</button>
+          <div className="flex gap-4 shrink-0 items-center">
+            <RefreshButton onClick={load} className="shadow-md" />
+            <ThemeButton onClick={openEdit}>编辑</ThemeButton>
+            <ThemeButton onClick={() => setShowToken(true)} variant="gray">Token</ThemeButton>
+            <div className="flex flex-col items-center gap-1 group relative">
+              <StatusToggle 
+                checked={app.status === 'active'} 
+                onChange={() => setConfirmToggle(true)} 
+              />
+              <span className="text-[10px] font-bold text-dark/30 group-hover:text-amber-600 transition-colors uppercase">
+                {app.status === 'active' ? '运行中' : '已暂停'}
+              </span>
+            </div>
+            <div className="w-px h-8 bg-neutral-100 mx-1" />
+            <DeleteButton onClick={() => setConfirmDel(true)} />
+          </div>
         </div>
       </div>
 
@@ -154,9 +169,13 @@ export function AppDetail() {
                   <td className="px-6 py-4 font-medium text-dark/60 text-[13px]">{timeAgo(d.lastSeen)}</td>
                   <td className="px-6 py-4"><StatusBadge status={d.banned ? 'banned' : 'active'} /></td>
                   <td className="px-6 py-4">
-                    <button onClick={() => toggleBan(d)} className={`text-[12px] font-semibold px-3 py-1.5 rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 border outline-none ${d.banned ? 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'text-red-600 bg-red-50 border-red-200/50 hover:bg-red-100'}`}>
-                      {d.banned ? '解封' : '封禁'}
-                    </button>
+                    <ThemeButton 
+                      onClick={() => toggleBan(d)} 
+                      variant={d.banned ? 'amber' : 'red'}
+                      className="scale-90 origin-left"
+                    >
+                      {d.banned ? '解 封' : '封 禁'}
+                    </ThemeButton>
                   </td>
                 </tr>
               ))}
@@ -169,30 +188,21 @@ export function AppDetail() {
       {showEdit && (
         <div className="modal-backdrop" onClick={() => setShowEdit(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-display font-bold text-dark mb-5">编辑应用</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">应用名称</label>
-                <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all outline-none" />
+            <h3 className="text-lg font-display font-bold text-dark mb-8">编辑应用</h3>
+            <div className="space-y-10">
+              <WaveInput label="应用名称" value={editName} onChange={e => setEditName(e.target.value)} />
+              
+              <div className="grid grid-cols-2 gap-x-6 gap-y-10">
+                <WaveInput label="设备上限 (0=不限)" type="number" min={0} value={editMaxDevices} onChange={e => setEditMaxDevices(Number(e.target.value))} />
+                <WaveInput label="日志保留 (-1=全部)" type="number" value={editLogRetention} onChange={e => setEditLogRetention(Number(e.target.value))} />
+                <WaveInput label="到期时间 (留空=永久)" type="datetime-local" value={editExpiresAt} onChange={e => setEditExpiresAt(e.target.value)} className="col-span-2" />
               </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">设备上限</label>
-                <input type="number" min={0} value={editMaxDevices} onChange={e => setEditMaxDevices(Number(e.target.value))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all outline-none" />
-                <p className="mt-1.5 text-[12px] font-medium text-dark/40">0 = 不限</p>
-              </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">日志保留</label>
-                <input type="number" value={editLogRetention} onChange={e => setEditLogRetention(Number(e.target.value))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all outline-none" />
-                <p className="mt-1.5 text-[12px] font-medium text-dark/40">-1 = 全部记录, 0 = 不记录, N = 保留近 N 条</p>
-              </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-dark/80 mb-2">到期时间</label>
-                <input type="datetime-local" value={editExpiresAt} onChange={e => setEditExpiresAt(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all outline-none" />
-                <p className="mt-1.5 text-[12px] font-medium text-dark/40">留空 = 永不过期</p>
-              </div>
+
               <div className="flex justify-end gap-3 pt-4">
-                <button onClick={() => setShowEdit(false)} className="px-4 py-2 text-[14px] font-semibold text-dark/70 border border-transparent hover:border-neutral-200 rounded-xl hover:bg-neutral-100 transition-all outline-none">取消</button>
-                <button onClick={saveEdit} disabled={saving || !editName.trim()} className="px-4 py-2 text-[14px] font-semibold text-white bg-amber-500 border border-transparent rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 transition-all active:translate-y-0 active:shadow-sm outline-none">{saving ? '保存中...' : '保 存'}</button>
+                <ThemeButton variant="gray" onClick={() => setShowEdit(false)}>取消</ThemeButton>
+                <ThemeButton onClick={saveEdit} disabled={saving || !editName.trim()}>
+                  {saving ? '保存中...' : '保 存 修 改'}
+                </ThemeButton>
               </div>
             </div>
           </div>
@@ -213,9 +223,9 @@ export function AppDetail() {
               </div>
             </div>
             <div className="bg-neutral-50/50 rounded-xl p-4 font-mono text-[13px] text-dark/70 break-all select-all border border-neutral-200/50 shadow-inner">{token || '无法获取'}</div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={copy} className="px-4 py-2 text-[13px] font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors shadow-sm outline-none">{copied ? '已复制' : '复制'}</button>
-              <button onClick={() => setShowToken(false)} className="px-4 py-2 text-[13px] font-semibold text-dark/70 rounded-xl hover:bg-neutral-100 transition-colors outline-none">关闭</button>
+            <div className="flex justify-end gap-3 mt-5">
+              <ThemeButton onClick={copy}>{copied ? '已复制' : '复制'}</ThemeButton>
+              <ThemeButton variant="gray" onClick={() => setShowToken(false)}>关闭</ThemeButton>
             </div>
           </div>
         </div>

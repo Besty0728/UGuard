@@ -11,7 +11,12 @@ export async function onRequestGet() {
     const apps = [];
     for (const id of appIds) {
       const appData = await ug_guard.get(`app_${id}`, { type: 'json' });
-      if (appData) apps.push(appData);
+      if (appData) {
+        // 获取设备数量
+        const devices = await ug_guard.get(`devices_${id}`, { type: 'json' });
+        appData.deviceCount = Array.isArray(devices) ? devices.length : 0;
+        apps.push(appData);
+      }
     }
 
     return jsonResponse({ success: true, data: apps });

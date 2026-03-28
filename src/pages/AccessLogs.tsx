@@ -3,6 +3,8 @@ import { getApps, getLogs, deleteLog } from '@/lib/api';
 import { StatusBadge } from '@/components/StatusBadge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
+import { ThemeButton, RefreshButton, DeleteButton } from '@/components/common/Buttons';
+import { CustomDropdown } from '@/components/common/Dropdowns';
 import { formatDate } from '@/lib/utils';
 import type { AppInfo, AccessLog } from '@/types';
 
@@ -47,14 +49,29 @@ export function AccessLogs() {
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-display font-bold text-dark tracking-tight">访问日志</h2>
         <div className="flex gap-3">
-          <select value={fApp} onChange={e => setFApp(e.target.value)} className="px-4 py-2 text-[13px] font-semibold border border-neutral-200/60 rounded-xl text-dark bg-white/60 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all backdrop-blur-sm cursor-pointer outline-none">
-            <option value="">全部应用</option>
-            {apps.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-          <select value={fResult} onChange={e => setFResult(e.target.value)} className="px-4 py-2 text-[13px] font-semibold border border-neutral-200/60 rounded-xl text-dark bg-white/60 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all backdrop-blur-sm cursor-pointer outline-none">
-            <option value="">全部结果</option>
-            <option value="allowed">通过</option><option value="denied">拒绝</option><option value="expired">过期</option><option value="banned">封禁</option><option value="max_devices">超限</option>
-          </select>
+          <CustomDropdown 
+            value={fApp} 
+            onChange={setFApp} 
+            options={[
+              { value: '', label: '全部应用' },
+              ...apps.map(a => ({ value: a.id, label: a.name }))
+            ]}
+            className=""
+          />
+          <CustomDropdown 
+            value={fResult} 
+            onChange={setFResult} 
+            options={[
+              { value: '', label: '全部结果' },
+              { value: 'allowed', label: '通过' },
+              { value: 'denied', label: '拒绝' },
+              { value: 'expired', label: '过期' },
+              { value: 'banned', label: '封禁' },
+              { value: 'max_devices', label: '超限' }
+            ]}
+            className="min-w-[140px]"
+          />
+          <RefreshButton onClick={() => load(true)} disabled={loading} className="shrink-0" />
         </div>
       </div>
 
@@ -84,21 +101,22 @@ export function AccessLogs() {
                   <td className="px-6 py-4 text-dark/50 font-mono text-[13px] font-medium">{l.ip}</td>
                   <td className="px-6 py-4 text-dark/40 font-mono text-[12px] font-medium">{l.deviceFingerprint.slice(0, 16)}...</td>
                   <td className="px-6 py-4 text-right">
-                    <button
+                    <DeleteButton
                       onClick={() => handleDelete(l.id)}
                       disabled={deleting === l.id}
-                      className="text-[12px] text-red-400 hover:text-red-600 font-semibold opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30 outline-none"
-                    >
-                      {deleting === l.id ? '...' : '删除'}
-                    </button>
+                      className="scale-[0.7] origin-right opacity-0 group-hover:opacity-100 transition-all"
+                      text={deleting === l.id ? '...' : '删 除'}
+                    />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {hasMore && (
-            <div className="px-6 py-5 border-t border-neutral-100/60 bg-white/40 text-center">
-              <button onClick={() => load(false)} disabled={loading} className="text-[13px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/50 hover:bg-amber-100 px-4 py-2 rounded-xl transition-colors disabled:opacity-30 shadow-sm outline-none">{loading ? '加载中...' : '加载更多日志 ↓'}</button>
+            <div className="px-6 py-6 border-t border-neutral-100/60 bg-white/40 text-center">
+              <ThemeButton onClick={() => load(false)} disabled={loading}>
+                {loading ? '加载中...' : '加载更多日志 ↓'}
+              </ThemeButton>
             </div>
           )}
         </div>
