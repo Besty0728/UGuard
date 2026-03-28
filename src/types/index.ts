@@ -10,7 +10,9 @@ export interface AppInfo {
   createdAt: string;
   expiresAt: string | null;
   maxDevices: number;
+  logRetention: number; // -1=全部记录, 0=不记录, N>0=保留最近N条
   permissions: { features: string[] };
+  token?: string; // 仅详情接口返回
 }
 
 /** Token 反查索引（对应 KV key: token_{sha256hex}） */
@@ -32,6 +34,7 @@ export interface DeviceInfo {
   os: string;
   unityVersion: string;
   deviceModel: string;
+  timezone: string;
   note: string;
 }
 
@@ -69,6 +72,7 @@ export interface VerifyRequest {
   os?: string;
   unityVersion?: string;
   deviceModel?: string;
+  timezone?: string;
 }
 
 /** Unity 客户端验证响应 */

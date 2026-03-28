@@ -53,6 +53,7 @@ export async function onRequestPost({ request }) {
       createdAt: now,
       expiresAt: expiresAt || null,
       maxDevices: maxDevices || 0,
+      logRetention: -1,
       permissions: { features: ['full'] },
     };
 
@@ -64,6 +65,9 @@ export async function onRequestPost({ request }) {
       appId,
       status: 'active',
     }));
+
+    // 存储明文 Token（管理员可反复查看）
+    await app_store.put(`token_plain_${appId}`, token);
 
     // 更新应用列表索引
     const listRaw = await app_store.get('apps_list', { type: 'json' });

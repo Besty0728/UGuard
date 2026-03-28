@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Apps } from './pages/Apps';
 import { AppDetail } from './pages/AppDetail';
 import { AccessLogs } from './pages/AccessLogs';
+import { Docs } from './pages/Docs';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="apps" element={<Apps />} />
             <Route path="apps/:appId" element={<AppDetail />} />
             <Route path="logs" element={<AccessLogs />} />
+            <Route path="docs" element={<Docs />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,5 +1,6 @@
 /**
  * GET /api/logs — 日志查询（支持筛选和分页）
+ * 若指定 appId 且该应用 logRetention > 0，查询时自动清理超出部分的旧日志
  */
 
 export async function onRequestGet({ request }) {
@@ -17,22 +18,37 @@ export async function onRequestGet({ request }) {
       cursor,
     });
 
-    const logs = [];
-
+    // 收集匹配的日志（保留 KV key 用于可能的清理）
+    const allMatched = [];
     for (const key of listResult.keys) {
       const logData = await access_logs.get(key.name, { type: 'json' });
       if (!logData) continue;
-
-      // 应用筛选
       if (filterAppId && logData.appId !== filterAppId) continue;
       if (filterResult && logData.result !== filterResult) continue;
-
-      logs.push(logData);
-      if (logs.length >= limit) break;
+      allMatched.push({ ...logData, _key: key.name });
     }
 
-    // 按时间倒序（日志 key 包含时间戳，list 默认字典序 = 时间正序）
-    logs.reverse();
+    // 按时间倒序
+    allMatched.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 日志清理：若指定了 appId 且该应用设置了保留条数上限
+    if (filterAppId && allMatched.length > 0) {
+      try {
+        const appData = await app_store.get(`app_${filterAppId}`, { type: 'json' });
+        const logRetention = appData?.logRetention;
+        if (logRetention > 0 && allMatched.length > logRetention) {
+          const toDelete = allMatched.slice(logRetention);
+          for (const log of toDelete) {
+            await access_logs.delete(log._key);
+          }
+        }
+      } catch {
+        // 清理失败不影响查询
+      }
+    }
+
+    // 移除内部 _key 字段，截取请求的数量
+    const logs = allMatched.slice(0, limit).map(({ _key, ...log }) => log);
 
     return jsonResponse({
       success: true,

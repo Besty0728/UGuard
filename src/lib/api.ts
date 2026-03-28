@@ -59,7 +59,7 @@ export async function getApp(appId: string): Promise<AppInfo> {
   return request<AppInfo>(`/apps/${appId}`);
 }
 
-export async function updateApp(appId: string, updates: Partial<Pick<AppInfo, 'name' | 'status' | 'maxDevices' | 'expiresAt'>>): Promise<AppInfo> {
+export async function updateApp(appId: string, updates: Partial<Pick<AppInfo, 'name' | 'status' | 'maxDevices' | 'logRetention' | 'expiresAt'>>): Promise<AppInfo> {
   return request<AppInfo>(`/apps/${appId}`, {
     method: 'PUT',
     body: JSON.stringify(updates),

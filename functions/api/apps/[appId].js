@@ -13,7 +13,9 @@ export async function onRequestGet({ params }) {
       return jsonResponse({ success: false, error: '应用不存在' }, 404);
     }
 
-    return jsonResponse({ success: true, data: appData });
+    // 附带明文 Token
+    const token = await app_store.get(`token_plain_${appId}`);
+    return jsonResponse({ success: true, data: { ...appData, token } });
   } catch (e) {
     return jsonResponse({ success: false, error: e.message }, 500);
   }
@@ -34,6 +36,7 @@ export async function onRequestPut({ request, params }) {
     if (updates.name !== undefined) appData.name = updates.name;
     if (updates.status !== undefined) appData.status = updates.status;
     if (updates.maxDevices !== undefined) appData.maxDevices = updates.maxDevices;
+    if (updates.logRetention !== undefined) appData.logRetention = updates.logRetention;
     if (updates.expiresAt !== undefined) appData.expiresAt = updates.expiresAt;
 
     await app_store.put(`app_${appId}`, JSON.stringify(appData));
@@ -47,7 +50,9 @@ export async function onRequestPut({ request, params }) {
       }
     }
 
-    return jsonResponse({ success: true, data: appData });
+    // 附带明文 Token
+    const token = await app_store.get(`token_plain_${appId}`);
+    return jsonResponse({ success: true, data: { ...appData, token } });
   } catch (e) {
     return jsonResponse({ success: false, error: e.message }, 500);
   }
@@ -62,8 +67,9 @@ export async function onRequestDelete({ params }) {
       return jsonResponse({ success: false, error: '应用不存在' }, 404);
     }
 
-    // 删除 Token 索引
+    // 删除 Token 索引和明文
     await app_store.delete(`token_${appData.tokenHash}`);
+    await app_store.delete(`token_plain_${appId}`);
 
     // 删除所有设备记录
     const deviceList = await app_store.get(`devices_${appId}`, { type: 'json' }) || [];

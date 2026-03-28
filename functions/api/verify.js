@@ -10,7 +10,7 @@ export async function onRequestPost({ request }) {
 
   try {
     const body = await request.json();
-    const { token, fingerprint, os, unityVersion, deviceModel } = body;
+    const { token, fingerprint, os, unityVersion, deviceModel, timezone } = body;
 
     if (!token || !fingerprint) {
       await writeLog('unknown', '', fingerprint || '', ip, 'denied', '缺少 token 或 fingerprint', request);
@@ -101,6 +101,7 @@ export async function onRequestPost({ request }) {
         os: os || '',
         unityVersion: unityVersion || '',
         deviceModel: deviceModel || '',
+        timezone: timezone || '',
         note: '',
       };
 
@@ -113,7 +114,7 @@ export async function onRequestPost({ request }) {
     }
 
     // 7. 验证通过 — 记录日志（采样：仅记录部分成功日志）
-    if (Math.random() < 0.1) {
+    if (appData.logRetention !== 0 && Math.random() < 0.1) {
       await writeLog(appData.id, appData.name, fingerprint, ip, 'allowed', '', request);
     }
 
