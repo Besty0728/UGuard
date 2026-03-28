@@ -17,8 +17,9 @@ export async function onRequestGet({ request }) {
     const listResult = await ug_access_logs.list(listOpts);
 
     // 收集匹配的日志（保留 KV key 用于可能的清理）
+    const keys = Array.isArray(listResult?.keys) ? listResult.keys : [];
     const allMatched = [];
-    for (const key of listResult.keys) {
+    for (const key of keys) {
       const logData = await ug_access_logs.get(key.name, { type: 'json' });
       if (!logData) continue;
       if (filterAppId && logData.appId !== filterAppId) continue;

@@ -12,9 +12,11 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getApps(), getLogs({ limit: 8 })])
-      .then(([a, l]) => { setApps(a); setLogs(l.logs); })
-      .catch(() => {})
+    Promise.allSettled([getApps(), getLogs({ limit: 8 })])
+      .then(([appsResult, logsResult]) => {
+        if (appsResult.status === 'fulfilled') setApps(appsResult.value);
+        if (logsResult.status === 'fulfilled') setLogs(logsResult.value.logs);
+      })
       .finally(() => setLoading(false));
   }, []);
 

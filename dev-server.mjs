@@ -308,8 +308,9 @@ async function handleLogs(method, url) {
   const listOpts = { prefix: 'log_', limit: 256 };
   if (cursor) listOpts.cursor = cursor;
   const listResult = await ug_access_logs.list(listOpts);
+  const keys = Array.isArray(listResult?.keys) ? listResult.keys : [];
   const allMatched = [];
-  for (const key of listResult.keys) {
+  for (const key of keys) {
     const logData = await ug_access_logs.get(key.name, { type: 'json' });
     if (!logData) continue;
     if (filterAppId && logData.appId !== filterAppId) continue;
