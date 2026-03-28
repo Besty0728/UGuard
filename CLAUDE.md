@@ -3,7 +3,7 @@
 ## 技术栈
 - **前端**: React 18 + Vite + TailwindCSS + React Router v6
 - **后端**: EdgeOne Pages Edge Functions (`onRequest`)
-- **数据库**: EdgeOne Pages KV（命名空间：`ug_app_store`、`ug_access_logs`）
+- **数据库**: EdgeOne Pages KV（统一命名空间：`ug_guard`）
 - **包管理**: pnpm
 
 ## 项目结构

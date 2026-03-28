@@ -44,14 +44,14 @@ export function AccessLogs() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-display font-semibold text-neutral-800">访问日志</h2>
-        <div className="flex gap-2">
-          <select value={fApp} onChange={e => setFApp(e.target.value)} className="px-2.5 py-1 text-[13px] border border-neutral-200 rounded-lg text-neutral-600 focus:outline-none focus:border-primary-400">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-2xl font-display font-bold text-dark tracking-tight">访问日志</h2>
+        <div className="flex gap-3">
+          <select value={fApp} onChange={e => setFApp(e.target.value)} className="px-4 py-2 text-[13px] font-semibold border border-neutral-200/60 rounded-xl text-dark bg-white/60 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all backdrop-blur-sm cursor-pointer outline-none">
             <option value="">全部应用</option>
             {apps.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <select value={fResult} onChange={e => setFResult(e.target.value)} className="px-2.5 py-1 text-[13px] border border-neutral-200 rounded-lg text-neutral-600 focus:outline-none focus:border-primary-400">
+          <select value={fResult} onChange={e => setFResult(e.target.value)} className="px-4 py-2 text-[13px] font-semibold border border-neutral-200/60 rounded-xl text-dark bg-white/60 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all backdrop-blur-sm cursor-pointer outline-none">
             <option value="">全部结果</option>
             <option value="allowed">通过</option><option value="denied">拒绝</option><option value="expired">过期</option><option value="banned">封禁</option><option value="max_devices">超限</option>
           </select>
@@ -64,30 +64,30 @@ export function AccessLogs() {
       : logs.length === 0 ? <EmptyState title="暂无日志" />
       : (
         <div className="card overflow-hidden">
-          <table className="w-full text-[13px]">
-            <thead><tr className="border-b border-neutral-100 text-[11px] text-neutral-400 uppercase tracking-wider">
-              <th className="text-left font-medium px-5 py-2">时间</th>
-              <th className="text-left font-medium px-5 py-2">应用</th>
-              <th className="text-left font-medium px-5 py-2">结果</th>
-              <th className="text-left font-medium px-5 py-2">原因</th>
-              <th className="text-left font-medium px-5 py-2">IP</th>
-              <th className="text-left font-medium px-5 py-2">指纹</th>
-              <th className="text-left font-medium px-5 py-2 w-12"></th>
+          <table className="w-full text-left border-collapse">
+            <thead><tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] text-dark/50 font-semibold uppercase tracking-wider">
+              <th className="px-6 py-4">时间</th>
+              <th className="px-6 py-4">应用</th>
+              <th className="px-6 py-4">结果</th>
+              <th className="px-6 py-4">原因</th>
+              <th className="px-6 py-4">IP</th>
+              <th className="px-6 py-4">指纹</th>
+              <th className="px-6 py-4 w-12"></th>
             </tr></thead>
             <tbody>
               {logs.map(l => (
-                <tr key={l.id} className="border-b border-neutral-100/60 last:border-0 hover:bg-primary-50/30 transition-all duration-150 group">
-                  <td className="px-5 py-2.5 text-neutral-400 whitespace-nowrap">{formatDate(l.timestamp)}</td>
-                  <td className="px-5 py-2.5 text-neutral-700">{l.appName || '-'}</td>
-                  <td className="px-5 py-2.5"><StatusBadge status={l.result} /></td>
-                  <td className="px-5 py-2.5 text-neutral-400">{l.reason || '-'}</td>
-                  <td className="px-5 py-2.5 text-neutral-400 font-mono text-xs">{l.ip}</td>
-                  <td className="px-5 py-2.5 text-neutral-300 font-mono text-xs">{l.deviceFingerprint.slice(0, 16)}...</td>
-                  <td className="px-5 py-2.5">
+                <tr key={l.id} className="border-b border-neutral-100/40 last:border-0 hover:bg-white/60 transition-all duration-200 group">
+                  <td className="px-6 py-4 text-dark/60 font-medium text-[13px] whitespace-nowrap">{formatDate(l.timestamp)}</td>
+                  <td className="px-6 py-4 text-[14px] text-dark font-semibold">{l.appName || '-'}</td>
+                  <td className="px-6 py-4"><StatusBadge status={l.result} /></td>
+                  <td className="px-6 py-4 text-dark/60 font-medium text-[13px]">{l.reason || '-'}</td>
+                  <td className="px-6 py-4 text-dark/50 font-mono text-[13px] font-medium">{l.ip}</td>
+                  <td className="px-6 py-4 text-dark/40 font-mono text-[12px] font-medium">{l.deviceFingerprint.slice(0, 16)}...</td>
+                  <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => handleDelete(l.id)}
                       disabled={deleting === l.id}
-                      className="text-[12px] text-neutral-300 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30"
+                      className="text-[12px] text-red-400 hover:text-red-600 font-semibold opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30 outline-none"
                     >
                       {deleting === l.id ? '...' : '删除'}
                     </button>
@@ -97,8 +97,8 @@ export function AccessLogs() {
             </tbody>
           </table>
           {hasMore && (
-            <div className="px-5 py-2.5 border-t border-neutral-50 text-center">
-              <button onClick={() => load(false)} disabled={loading} className="text-[12px] text-primary-600 hover:text-primary-700 font-medium disabled:opacity-30">{loading ? '...' : '加载更多'}</button>
+            <div className="px-6 py-5 border-t border-neutral-100/60 bg-white/40 text-center">
+              <button onClick={() => load(false)} disabled={loading} className="text-[13px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/50 hover:bg-amber-100 px-4 py-2 rounded-xl transition-colors disabled:opacity-30 shadow-sm outline-none">{loading ? '加载中...' : '加载更多日志 ↓'}</button>
             </div>
           )}
         </div>

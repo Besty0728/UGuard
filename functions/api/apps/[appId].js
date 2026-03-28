@@ -7,14 +7,14 @@
 export async function onRequestGet({ params }) {
   try {
     const { appId } = params;
-    const appData = await ug_app_store.get(`app_${appId}`, { type: 'json' });
+    const appData = await ug_guard.get(`app_${appId}`, { type: 'json' });
 
     if (!appData) {
       return jsonResponse({ success: false, error: '应用不存在' }, 404);
     }
 
     // 附带明文 Token
-    const token = await ug_app_store.get(`token_plain_${appId}`);
+    const token = await ug_guard.get(`token_plain_${appId}`);
     return jsonResponse({ success: true, data: { ...appData, token } });
   } catch (e) {
     return jsonResponse({ success: false, error: e.message }, 500);
@@ -24,7 +24,7 @@ export async function onRequestGet({ params }) {
 export async function onRequestPut({ request, params }) {
   try {
     const { appId } = params;
-    const appData = await ug_app_store.get(`app_${appId}`, { type: 'json' });
+    const appData = await ug_guard.get(`app_${appId}`, { type: 'json' });
 
     if (!appData) {
       return jsonResponse({ success: false, error: '应用不存在' }, 404);
@@ -39,19 +39,19 @@ export async function onRequestPut({ request, params }) {
     if (updates.logRetention !== undefined) appData.logRetention = updates.logRetention;
     if (updates.expiresAt !== undefined) appData.expiresAt = updates.expiresAt;
 
-    await ug_app_store.put(`app_${appId}`, JSON.stringify(appData));
+    await ug_guard.put(`app_${appId}`, JSON.stringify(appData));
 
     // 如果暂停应用，同步更新 Token 索引状态
     if (updates.status) {
-      const tokenIndex = await ug_app_store.get(`token_${appData.tokenHash}`, { type: 'json' });
+      const tokenIndex = await ug_guard.get(`token_${appData.tokenHash}`, { type: 'json' });
       if (tokenIndex) {
         tokenIndex.status = updates.status === 'active' ? 'active' : 'revoked';
-        await ug_app_store.put(`token_${appData.tokenHash}`, JSON.stringify(tokenIndex));
+        await ug_guard.put(`token_${appData.tokenHash}`, JSON.stringify(tokenIndex));
       }
     }
 
     // 附带明文 Token
-    const token = await ug_app_store.get(`token_plain_${appId}`);
+    const token = await ug_guard.get(`token_plain_${appId}`);
     return jsonResponse({ success: true, data: { ...appData, token } });
   } catch (e) {
     return jsonResponse({ success: false, error: e.message }, 500);
@@ -61,30 +61,30 @@ export async function onRequestPut({ request, params }) {
 export async function onRequestDelete({ params }) {
   try {
     const { appId } = params;
-    const appData = await ug_app_store.get(`app_${appId}`, { type: 'json' });
+    const appData = await ug_guard.get(`app_${appId}`, { type: 'json' });
 
     if (!appData) {
       return jsonResponse({ success: false, error: '应用不存在' }, 404);
     }
 
     // 删除 Token 索引和明文
-    await ug_app_store.delete(`token_${appData.tokenHash}`);
-    await ug_app_store.delete(`token_plain_${appId}`);
+    await ug_guard.delete(`token_${appData.tokenHash}`);
+    await ug_guard.delete(`token_plain_${appId}`);
 
     // 删除所有设备记录
-    const deviceList = await ug_app_store.get(`devices_${appId}`, { type: 'json' }) || [];
+    const deviceList = await ug_guard.get(`devices_${appId}`, { type: 'json' }) || [];
     for (const fingerprint of deviceList) {
-      await ug_app_store.delete(`device_${appId}_${fingerprint}`);
+      await ug_guard.delete(`device_${appId}_${fingerprint}`);
     }
-    await ug_app_store.delete(`devices_${appId}`);
+    await ug_guard.delete(`devices_${appId}`);
 
     // 删除应用数据
-    await ug_app_store.delete(`app_${appId}`);
+    await ug_guard.delete(`app_${appId}`);
 
     // 更新应用列表
-    const listRaw = await ug_app_store.get('apps_list', { type: 'json' }) || [];
+    const listRaw = await ug_guard.get('apps_list', { type: 'json' }) || [];
     const newList = listRaw.filter(id => id !== appId);
-    await ug_app_store.put('apps_list', JSON.stringify(newList));
+    await ug_guard.put('apps_list', JSON.stringify(newList));
 
     return jsonResponse({ success: true });
   } catch (e) {

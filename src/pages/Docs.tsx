@@ -16,13 +16,22 @@ function CodeBlock({ code }: { code: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="relative group">
-      <pre className="bg-[#1e2536] text-[#e2e8f0] rounded-lg p-4 text-[13px] leading-relaxed overflow-x-auto font-mono">
-        <code>{code}</code>
-      </pre>
+    <div className="relative group mb-4">
+      <div className="bg-[#1c1917] border border-[#2a2623] rounded-2xl shadow-xl overflow-hidden">
+        <div className="flex items-center px-4 py-3 border-b border-dark/50 bg-[#2a2623]/80">
+          <div className="flex gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56] border border-dark/20" />
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-dark/20" />
+            <div className="w-3 h-3 rounded-full bg-[#27c93f] border border-dark/20" />
+          </div>
+        </div>
+        <pre className="text-[#fdf8ed] p-5 text-[14px] leading-relaxed overflow-x-auto font-mono">
+          <code>{code}</code>
+        </pre>
+      </div>
       <button
         onClick={copy}
-        className="absolute top-2 right-2 px-2 py-1 text-[11px] text-white/40 rounded hover:text-white/80 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+        className="absolute top-1.5 right-2 px-3 py-1 text-[12px] font-bold text-white/50 border border-white/20 rounded-lg hover:text-white hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
       >
         {copied ? '已复制' : '复制'}
       </button>
@@ -32,32 +41,32 @@ function CodeBlock({ code }: { code: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2.5">
-      <h3 className="text-[14px] font-display font-semibold text-neutral-800">{title}</h3>
-      <div className="text-[13px] text-neutral-600 leading-relaxed space-y-2">{children}</div>
+    <div className="space-y-3">
+      <h3 className="text-[17px] font-display font-bold text-dark">{title}</h3>
+      <div className="text-[14px] font-medium text-dark/70 leading-relaxed space-y-3">{children}</div>
     </div>
   );
 }
 
 function Inline({ children }: { children: React.ReactNode }) {
-  return <code className="px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded text-[12px] font-mono">{children}</code>;
+  return <code className="px-1.5 py-0.5 bg-amber-50 border border-amber-500/10 rounded-md text-[13px] font-medium text-amber-900 font-mono shadow-sm mx-0.5">{children}</code>;
 }
 
 export function Docs() {
   const [active, setActive] = useState<TabId>('quickstart');
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-[800px]">
-      <h2 className="text-base font-display font-semibold text-neutral-800">接入文档</h2>
+    <div className="space-y-8 animate-fade-in max-w-[900px]">
+      <h2 className="text-2xl font-display font-bold text-dark tracking-tight">接入文档</h2>
 
-      <div className="flex gap-1 p-1 bg-white rounded-lg shadow-card w-fit">
+      <div className="flex gap-2 p-1.5 bg-white/40 border border-neutral-100/60 rounded-xl shadow-sm w-fit mb-6 backdrop-blur-sm">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setActive(t.id)}
-            className={`px-3.5 py-1.5 text-[13px] font-medium rounded-md transition-all ${
-              active === t.id ? 'bg-primary-600 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
-            }`}
+            className={`px-4 py-1.5 text-[14px] font-semibold rounded-lg transition-all border ${
+              active === t.id ? 'bg-amber-500 text-white border-amber-400 shadow-sm' : 'text-dark/60 border-transparent hover:text-dark hover:bg-white/50'
+            } outline-none cursor-pointer`}
           >
             {t.label}
           </button>
@@ -460,12 +469,12 @@ function Errors() {
         字段，与后端 verify.js 中的实际返回值一一对应：
       </p>
       <div className="card overflow-hidden">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-neutral-100 text-[11px] text-neutral-400 uppercase tracking-wider">
-              <th className="text-left font-medium px-5 py-2.5">reason</th>
-              <th className="text-left font-medium px-5 py-2.5">触发条件</th>
-              <th className="text-left font-medium px-5 py-2.5">客户端建议</th>
+            <tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] text-dark/50 font-semibold uppercase tracking-wider">
+              <th className="px-6 py-4">reason</th>
+              <th className="px-6 py-4">触发条件</th>
+              <th className="px-6 py-4">客户端建议</th>
             </tr>
           </thead>
           <tbody>
@@ -483,11 +492,11 @@ function Errors() {
             ).map(([code, cond, action]) => (
               <tr
                 key={code}
-                className="border-b border-neutral-50/80 last:border-0 hover:bg-primary-50/20 transition-colors"
+                className="border-b border-neutral-100/40 last:border-0 hover:bg-white/60 transition-all duration-200"
               >
-                <td className="px-5 py-3 font-mono text-[12px] text-primary-700 whitespace-nowrap">{code}</td>
-                <td className="px-5 py-3 text-neutral-600">{cond}</td>
-                <td className="px-5 py-3 text-neutral-400">{action}</td>
+                <td className="px-6 py-4 font-mono text-[13px] text-amber-700 font-medium whitespace-nowrap">{code}</td>
+                <td className="px-6 py-4 text-dark/70 font-medium text-[13px]">{cond}</td>
+                <td className="px-6 py-4 text-dark/50 font-medium text-[13px]">{action}</td>
               </tr>
             ))}
           </tbody>

@@ -25,15 +25,15 @@ export function statusText(s: string): string {
 /** 状态样式 */
 export function statusColor(s: string): string {
   return {
-    active: 'bg-emerald-50 text-emerald-600',
-    allowed: 'bg-emerald-50 text-emerald-600',
-    suspended: 'bg-amber-50 text-amber-600',
-    banned: 'bg-red-50 text-red-600',
-    denied: 'bg-red-50 text-red-600',
-    revoked: 'bg-red-50 text-red-600',
-    expired: 'bg-gray-100 text-gray-500',
-    max_devices: 'bg-orange-50 text-orange-600',
-  }[s] ?? 'bg-gray-100 text-gray-500';
+    active: 'bg-emerald-50 text-emerald-600 border border-emerald-200/50 shadow-sm',
+    allowed: 'bg-emerald-50 text-emerald-600 border border-emerald-200/50 shadow-sm',
+    suspended: 'bg-amber-50 text-amber-600 border border-amber-200/50 shadow-sm',
+    banned: 'bg-red-50 text-red-600 border border-red-200/50 shadow-sm',
+    denied: 'bg-red-50 text-red-600 border border-red-200/50 shadow-sm',
+    revoked: 'bg-red-50 text-red-600 border border-red-200/50 shadow-sm',
+    expired: 'bg-neutral-100 text-neutral-600 border border-neutral-200/50 shadow-sm',
+    max_devices: 'bg-orange-50 text-orange-600 border border-orange-200/50 shadow-sm',
+  }[s] ?? 'bg-neutral-100 text-neutral-600 border border-neutral-200/50 shadow-sm';
 }
 
 export function cn(...c: (string | false | null | undefined)[]): string {

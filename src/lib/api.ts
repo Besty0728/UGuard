@@ -42,6 +42,13 @@ export async function login(adminKey: string): Promise<boolean> {
   return json.success;
 }
 
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  return request<void>('/user/password', {
+    method: 'POST',
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+}
+
 // ─── Apps ───
 
 export async function getApps(): Promise<AppInfo[]> {

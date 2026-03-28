@@ -31,43 +31,43 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h2 className="text-base font-display font-semibold text-neutral-800">概览</h2>
+      <h2 className="text-2xl font-display font-bold text-dark tracking-tight mb-2">概览</h2>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-5">
         {stats.map(s => (
-          <div key={s.label} className="card px-4 py-3.5">
-            <p className="text-[11px] text-neutral-400 mb-0.5">{s.label}</p>
-            <p className={`text-xl font-display font-bold ${s.accent}`}>{s.value}</p>
+          <div key={s.label} className="card px-6 py-5 bg-white/40 border border-neutral-100/60 shadow-glass hover:shadow-glass-hover hover:-translate-y-0.5 transition-all duration-300 group">
+            <p className="text-[13px] font-medium text-dark/50 mb-1.5 uppercase tracking-wider group-hover:text-dark/70 transition-colors">{s.label}</p>
+            <p className={`text-3xl font-display font-bold tracking-tight ${s.accent}`}>{s.value}</p>
           </div>
         ))}
       </div>
 
       {/* Recent logs */}
-      <div className="card">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-100">
-          <span className="text-[13px] font-medium text-neutral-700">最近日志</span>
-          <Link to="/logs" className="text-[12px] text-primary-600 hover:text-primary-700">查看全部</Link>
+      <div className="card overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100/60 bg-white/40">
+          <span className="text-[15px] font-bold text-dark/90 tracking-tight">最近日志</span>
+          <Link to="/logs" className="text-[13px] font-semibold text-amber-600 hover:text-amber-700 transition-colors">查看全部 &rarr;</Link>
         </div>
         {logs.length === 0 ? (
-          <p className="px-5 py-6 text-[13px] text-neutral-300">暂无日志</p>
+          <p className="px-6 py-10 text-[14px] font-medium text-dark/40 text-center">暂无日志</p>
         ) : (
-          <table className="w-full text-[13px]">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-neutral-50 text-[11px] text-neutral-400 uppercase tracking-wider">
-                <th className="text-left font-medium px-5 py-2">应用</th>
-                <th className="text-left font-medium px-5 py-2">结果</th>
-                <th className="text-left font-medium px-5 py-2">IP</th>
-                <th className="text-left font-medium px-5 py-2">时间</th>
+              <tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] text-dark/50 font-semibold uppercase tracking-wider">
+                <th className="px-6 py-4">应用</th>
+                <th className="px-6 py-4">结果</th>
+                <th className="px-6 py-4">IP</th>
+                <th className="px-6 py-4">时间</th>
               </tr>
             </thead>
             <tbody>
               {logs.map(l => (
-                <tr key={l.id} className="border-b border-neutral-100/60 last:border-0 hover:bg-primary-50/30 transition-all duration-150">
-                  <td className="px-5 py-2.5 text-neutral-700">{l.appName || '-'}</td>
-                  <td className="px-5 py-2.5"><StatusBadge status={l.result} /></td>
-                  <td className="px-5 py-2.5 text-neutral-400 font-mono text-xs">{l.ip}</td>
-                  <td className="px-5 py-2.5 text-neutral-400">{timeAgo(l.timestamp)}</td>
+                <tr key={l.id} className="border-b border-neutral-100/40 last:border-0 hover:bg-white/60 transition-all duration-200">
+                  <td className="px-6 py-4 text-[14px] font-semibold text-dark/90">{l.appName || '-'}</td>
+                  <td className="px-6 py-4"><StatusBadge status={l.result} /></td>
+                  <td className="px-6 py-4 text-dark/50 font-mono text-[13px] font-medium">{l.ip}</td>
+                  <td className="px-6 py-4 text-dark/60 font-medium text-[13px]">{timeAgo(l.timestamp)}</td>
                 </tr>
               ))}
             </tbody>

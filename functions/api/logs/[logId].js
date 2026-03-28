@@ -10,12 +10,12 @@ export async function onRequestDelete({ params }) {
     }
 
     const key = `log_${logId}`;
-    const existing = await ug_access_logs.get(key);
+    const existing = await ug_guard.get(key);
     if (!existing) {
       return jsonResponse({ success: false, error: '日志不存在' }, 404);
     }
 
-    await ug_access_logs.delete(key);
+    await ug_guard.delete(key);
     return jsonResponse({ success: true });
   } catch (e) {
     return jsonResponse({ success: false, error: e.message }, 500);

@@ -50,10 +50,10 @@ export function Apps() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-display font-semibold text-neutral-800">应用管理</h2>
-        <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-1.5 px-3 py-[7px] text-[13px] font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-2xl font-display font-bold text-dark tracking-tight">应用管理</h2>
+        <button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-1.5 px-4 py-2 text-[14px] font-semibold text-white bg-amber-500 border border-transparent rounded-xl shadow-sm hover:shadow-glass-hover hover:-translate-y-0.5 transition-all active:translate-y-0 active:shadow-sm hover:bg-amber-600">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           创建应用
         </button>
       </div>
@@ -62,27 +62,27 @@ export function Apps() {
 
       {apps.length === 0 ? <EmptyState title="暂无应用" description="点击「创建应用」开始" /> : (
         <div className="card overflow-hidden">
-          <table className="w-full text-[13px]">
-            <thead><tr className="border-b border-neutral-100 text-[11px] text-neutral-400 uppercase tracking-wider">
-              <th className="text-left font-medium px-5 py-2.5">名称</th>
-              <th className="text-left font-medium px-5 py-2.5">状态</th>
-              <th className="text-left font-medium px-5 py-2.5">设备上限</th>
-              <th className="text-left font-medium px-5 py-2.5">到期</th>
-              <th className="text-right font-medium px-5 py-2.5">操作</th>
+          <table className="w-full text-left border-collapse">
+            <thead><tr className="border-b border-neutral-100 bg-white/40 text-[12px] text-dark/60 font-semibold uppercase tracking-wider">
+              <th className="px-5 py-4">名称</th>
+              <th className="px-5 py-4">状态</th>
+              <th className="px-5 py-4">设备上限</th>
+              <th className="px-5 py-4">到期</th>
+              <th className="px-5 py-4 text-right">操作</th>
             </tr></thead>
             <tbody>
               {apps.map(app => (
-                <tr key={app.id} onClick={() => navigate(`/apps/${app.id}`)} className="border-b border-neutral-100/60 last:border-0 transition-all duration-150 hover:bg-primary-50/40 cursor-pointer group">
-                  <td className="px-5 py-3.5">
-                    <span className="text-neutral-800 font-medium group-hover:text-primary-700 transition-colors">{app.name}</span>
+                <tr key={app.id} onClick={() => navigate(`/apps/${app.id}`)} className="border-b border-neutral-100/50 last:border-0 transition-all duration-200 hover:bg-white/60 cursor-pointer group">
+                  <td className="px-5 py-4">
+                    <span className="text-dark font-semibold text-[14px] group-hover:text-amber-600 transition-colors">{app.name}</span>
                   </td>
-                  <td className="px-5 py-3.5"><StatusBadge status={app.status} /></td>
-                  <td className="px-5 py-3.5 text-neutral-400">{app.maxDevices === 0 ? '不限' : app.maxDevices}</td>
-                  <td className="px-5 py-3.5 text-neutral-400">{formatDate(app.expiresAt)}</td>
-                  <td className="px-5 py-3.5 text-right">
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 text-[12px] font-medium text-primary-600 rounded-md group-hover:bg-primary-50 transition-all">
+                  <td className="px-5 py-4"><StatusBadge status={app.status} /></td>
+                  <td className="px-5 py-4 text-dark/60 font-medium text-[13px]">{app.maxDevices === 0 ? '不限' : app.maxDevices}</td>
+                  <td className="px-5 py-4 text-dark/60 font-medium text-[13px]">{formatDate(app.expiresAt)}</td>
+                  <td className="px-5 py-4 text-right">
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 text-[12px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/50 rounded-xl shadow-sm group-hover:bg-amber-100 transition-all">
                       进入
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200"><polyline points="9 18 15 12 9 6"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-0 -ml-2 group-hover:ml-0 group-hover:w-3.5 group-hover:opacity-100 transition-all duration-200"><polyline points="9 18 15 12 9 6"/></svg>
                     </span>
                   </td>
                 </tr>
@@ -96,24 +96,24 @@ export function Apps() {
       {showCreate && (
         <div className="modal-backdrop" onClick={() => setShowCreate(false)}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-display font-semibold text-neutral-800 mb-4">创建应用</h3>
+            <h3 className="text-lg font-display font-bold text-dark mb-5">创建应用</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">应用名称</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="如：我的Unity项目" required autoFocus className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm text-neutral-800 placeholder:text-neutral-300 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all" />
+                <label className="block text-[13px] font-semibold text-dark/80 mb-2">应用名称</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="如：我的Unity项目" required autoFocus className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all" />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">设备上限</label>
-                <input type="number" min={0} value={maxDevices} onChange={e => setMaxDevices(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all" />
-                <p className="mt-1 text-[11px] text-neutral-300">0 = 不限</p>
+                <label className="block text-[13px] font-semibold text-dark/80 mb-2">设备上限</label>
+                <input type="number" min={0} value={maxDevices} onChange={e => setMaxDevices(Number(e.target.value))} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all" />
+                <p className="mt-1.5 text-[12px] font-medium text-dark/40">0 = 不限</p>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">到期时间</label>
-                <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-sm text-neutral-800 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all" />
+                <label className="block text-[13px] font-semibold text-dark/80 mb-2">到期时间 (可选)</label>
+                <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-sm font-medium text-dark bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all" />
               </div>
-              <div className="flex justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-1.5 text-[13px] font-medium text-neutral-500 rounded-lg hover:bg-neutral-50 transition-colors">取消</button>
-                <button type="submit" disabled={creating} className="px-3 py-1.5 text-[13px] font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-30 transition-colors">{creating ? '...' : '创建'}</button>
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-[14px] font-semibold text-dark/70 border border-transparent hover:border-neutral-200 rounded-xl hover:bg-neutral-100 transition-all">取消</button>
+                <button type="submit" disabled={creating} className="px-4 py-2 text-[14px] font-semibold text-white bg-amber-500 border border-transparent rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 transition-all active:translate-y-0 active:shadow-sm">{creating ? '...' : '创 建'}</button>
               </div>
             </form>
           </div>
@@ -124,19 +124,19 @@ export function Apps() {
       {showToken && (
         <div className="modal-backdrop" onClick={() => { setShowToken(false); setToken(''); }}>
           <div className="modal-box max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
               <div>
-                <h3 className="text-sm font-display font-semibold text-neutral-800">创建成功</h3>
-                <p className="text-[11px] text-neutral-400">可在应用详情页随时查看</p>
+                <h3 className="text-base font-display font-bold text-dark">创建成功</h3>
+                <p className="text-[13px] text-dark/50 font-medium">可在应用详情页随时查看</p>
               </div>
             </div>
-            <div className="bg-neutral-50 rounded-lg p-3 font-mono text-[12px] text-neutral-600 break-all select-all border border-neutral-100">{token}</div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={copy} className="px-3 py-1.5 text-[13px] font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">{copied ? '已复制' : '复制 Token'}</button>
-              <button onClick={() => { setShowToken(false); setToken(''); }} className="px-3 py-1.5 text-[13px] font-medium text-neutral-500 rounded-lg hover:bg-neutral-50 transition-colors">关闭</button>
+            <div className="bg-neutral-50/50 rounded-xl p-4 font-mono text-[13px] text-dark/70 break-all select-all border border-neutral-200/50 shadow-inner">{token}</div>
+            <div className="flex justify-end gap-2 mt-5">
+              <button onClick={copy} className="px-4 py-2 text-[13px] font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors shadow-sm">{copied ? '已复制' : '复制 Token'}</button>
+              <button onClick={() => { setShowToken(false); setToken(''); }} className="px-4 py-2 text-[13px] font-semibold text-dark/70 rounded-xl hover:bg-neutral-100 transition-colors">关闭</button>
             </div>
           </div>
         </div>

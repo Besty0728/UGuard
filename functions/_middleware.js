@@ -24,15 +24,12 @@ export async function onRequest(context) {
     return context.next();
   }
 
-  // 校验 Admin Key
+  // 校验 Admin Key（双轨并行：KV 密码 或 环境变量密码，任一匹配即通过）
   const adminKey = request.headers.get('X-Admin-Key');
-  const secret = env.ADMIN_SECRET;
+  const envPwd = env.ADMIN_SECRET;
+  const kvPwd = env.ug_guard ? await env.ug_guard.get('admin_pwd') : null;
 
-  if (!secret) {
-    return jsonResponse({ success: false, error: '服务器未配置 ADMIN_SECRET' }, 500);
-  }
-
-  if (!adminKey || adminKey !== secret) {
+  if (!adminKey || (adminKey !== envPwd && adminKey !== kvPwd)) {
     return jsonResponse({ success: false, error: '未授权' }, 401);
   }
 

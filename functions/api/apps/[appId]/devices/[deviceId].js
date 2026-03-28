@@ -8,13 +8,13 @@ export async function onRequestPut({ request, params }) {
     const updates = await request.json();
 
     // 查找设备（需遍历设备列表找到匹配 deviceId 的记录）
-    const deviceList = await ug_app_store.get(`devices_${appId}`, { type: 'json' }) || [];
+    const deviceList = await ug_guard.get(`devices_${appId}`, { type: 'json' }) || [];
 
     let targetFingerprint = null;
     let targetDevice = null;
 
     for (const fingerprint of deviceList) {
-      const device = await ug_app_store.get(`device_${appId}_${fingerprint}`, { type: 'json' });
+      const device = await ug_guard.get(`device_${appId}_${fingerprint}`, { type: 'json' });
       if (device && device.deviceId === deviceId) {
         targetFingerprint = fingerprint;
         targetDevice = device;
@@ -35,7 +35,7 @@ export async function onRequestPut({ request, params }) {
       targetDevice.note = updates.note;
     }
 
-    await ug_app_store.put(`device_${appId}_${targetFingerprint}`, JSON.stringify(targetDevice));
+    await ug_guard.put(`device_${appId}_${targetFingerprint}`, JSON.stringify(targetDevice));
 
     return jsonResponse({ success: true, data: targetDevice });
   } catch (e) {
