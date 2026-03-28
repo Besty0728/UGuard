@@ -19,8 +19,13 @@ export async function onRequestGet(context) {
     const keys = Array.isArray(listResult?.keys) ? listResult.keys : [];
     const allMatched = [];
 
-    for (const key of keys) {
-      const logData = await kv.get(key.name, { type: 'json' });
+    for (const entry of keys) {
+      const kvKey = entry?.key ?? entry?.name;
+      if (!kvKey) {
+        continue;
+      }
+
+      const logData = await kv.get(kvKey, { type: 'json' });
       if (!logData) {
         continue;
       }
@@ -30,7 +35,7 @@ export async function onRequestGet(context) {
       if (filterResult && logData.result !== filterResult) {
         continue;
       }
-      allMatched.push({ ...logData, _key: key.name });
+      allMatched.push({ ...logData, _key: kvKey });
     }
 
     allMatched.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
