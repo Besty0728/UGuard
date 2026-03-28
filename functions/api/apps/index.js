@@ -1,4 +1,11 @@
-import { getKV, hydrateAppData, jsonResponse, normalizeAccessWindow, normalizeExpiresAt } from '../../_shared.js';
+import {
+  getKV,
+  hydrateAppData,
+  jsonResponse,
+  normalizeAccessWindow,
+  normalizeExpiresAt,
+  normalizeGeoRestriction,
+} from '../../_shared.js';
 
 export async function onRequestGet(context) {
   try {
@@ -30,7 +37,7 @@ export async function onRequestPost(context) {
   try {
     const { request } = context;
     const kv = getKV(context);
-    const { name, maxDevices = 5, expiresAt = null, accessWindow } = await request.json();
+    const { name, maxDevices = 5, expiresAt = null, accessWindow, geoRestriction } = await request.json();
 
     if (!name || typeof name !== 'string') {
       return jsonResponse({ success: false, error: 'app name is required' }, 400);
@@ -65,6 +72,7 @@ export async function onRequestPost(context) {
       maxDevices: maxDevices || 0,
       logRetention: -1,
       accessWindow: normalizeAccessWindow(accessWindow),
+      geoRestriction: normalizeGeoRestriction(geoRestriction),
       permissions: { features: ['full'] },
     };
 

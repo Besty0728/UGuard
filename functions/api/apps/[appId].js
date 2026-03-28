@@ -1,4 +1,11 @@
-import { getKV, hydrateAppData, jsonResponse, normalizeAccessWindow, normalizeExpiresAt } from '../../_shared.js';
+import {
+  getKV,
+  hydrateAppData,
+  jsonResponse,
+  normalizeAccessWindow,
+  normalizeExpiresAt,
+  normalizeGeoRestriction,
+} from '../../_shared.js';
 
 export async function onRequestGet(context) {
   try {
@@ -37,6 +44,7 @@ export async function onRequestPut(context) {
     if (updates.logRetention !== undefined) appData.logRetention = updates.logRetention;
     if (updates.expiresAt !== undefined) appData.expiresAt = normalizeExpiresAt(updates.expiresAt);
     if (updates.accessWindow !== undefined) appData.accessWindow = normalizeAccessWindow(updates.accessWindow);
+    if (updates.geoRestriction !== undefined) appData.geoRestriction = normalizeGeoRestriction(updates.geoRestriction);
 
     await kv.put(`app_${appId}`, JSON.stringify(appData));
 
@@ -76,6 +84,7 @@ export async function onRequestDelete(context) {
     await kv.delete(`devices_${appId}`);
 
     await kv.delete(`app_${appId}`);
+    await deleteLogsForApp(kv, appId);
 
     const listRaw = (await kv.get('apps_list', { type: 'json' })) || [];
     const newList = listRaw.filter((id) => id !== appId);
@@ -85,4 +94,32 @@ export async function onRequestDelete(context) {
   } catch (error) {
     return jsonResponse({ success: false, error: error.message }, 500);
   }
+}
+
+async function deleteLogsForApp(kv, appId) {
+  let cursor;
+
+  do {
+    const listOptions = { prefix: 'log_', limit: 256 };
+    if (cursor) {
+      listOptions.cursor = cursor;
+    }
+
+    const listResult = await kv.list(listOptions);
+    const keys = Array.isArray(listResult?.keys) ? listResult.keys : [];
+
+    for (const entry of keys) {
+      const kvKey = entry?.key ?? entry?.name;
+      if (!kvKey) {
+        continue;
+      }
+
+      const logData = await kv.get(kvKey, { type: 'json' });
+      if (logData?.appId === appId) {
+        await kv.delete(kvKey);
+      }
+    }
+
+    cursor = listResult.complete ? undefined : listResult.cursor;
+  } while (cursor);
 }

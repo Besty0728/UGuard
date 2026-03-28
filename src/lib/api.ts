@@ -5,6 +5,7 @@ import type {
   AppInfo,
   CreateAppResponse,
   DeviceInfo,
+  GeoRestriction,
   LogFilter,
 } from '@/types';
 
@@ -62,10 +63,11 @@ export async function createApp(
   maxDevices: number,
   expiresAt: string | null,
   accessWindow?: AccessWindow,
+  geoRestriction?: GeoRestriction,
 ): Promise<CreateAppResponse> {
   return request<CreateAppResponse>('/apps', {
     method: 'POST',
-    body: JSON.stringify({ name, maxDevices, expiresAt, accessWindow }),
+    body: JSON.stringify({ name, maxDevices, expiresAt, accessWindow, geoRestriction }),
   });
 }
 
@@ -75,7 +77,7 @@ export async function getApp(appId: string): Promise<AppInfo> {
 
 export async function updateApp(
   appId: string,
-  updates: Partial<Pick<AppInfo, 'name' | 'status' | 'maxDevices' | 'logRetention' | 'expiresAt' | 'accessWindow'>>,
+  updates: Partial<Pick<AppInfo, 'name' | 'status' | 'maxDevices' | 'logRetention' | 'expiresAt' | 'accessWindow' | 'geoRestriction'>>,
 ): Promise<AppInfo> {
   return request<AppInfo>(`/apps/${appId}`, {
     method: 'PUT',

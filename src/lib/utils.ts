@@ -1,4 +1,4 @@
-import type { AccessWindow } from '@/types';
+import type { AccessWindow, GeoRestriction } from '@/types';
 
 export function formatDate(dateStr: string | null): string {
   if (!dateStr) {
@@ -36,6 +36,16 @@ export function formatAccessWindow(accessWindow?: AccessWindow): string {
   }
 
   return `${padHour(accessWindow.startHour)}:00 - ${padHour(accessWindow.endHour)}:00 (${accessWindow.timezone})`;
+}
+
+export function formatGeoRestriction(geoRestriction?: GeoRestriction): string {
+  if (!geoRestriction?.enabled) {
+    return '不限制地区';
+  }
+
+  const countries = geoRestriction.allowedCountries.length > 0 ? geoRestriction.allowedCountries.join(', ') : '任意国家';
+  const regions = geoRestriction.allowedRegions.length > 0 ? geoRestriction.allowedRegions.join(', ') : '任意地区';
+  return `${countries} / ${regions}`;
 }
 
 export function statusText(status: string): string {

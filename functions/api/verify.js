@@ -1,4 +1,4 @@
-import { getAccessWindowStatus, getKV, hydrateAppData, jsonResponse } from '../_shared.js';
+import { getAccessWindowStatus, getGeoRestrictionStatus, getKV, hydrateAppData, jsonResponse } from '../_shared.js';
 
 export async function onRequestPost(context) {
   const { request } = context;
@@ -11,7 +11,9 @@ export async function onRequestPost(context) {
 
     if (!token || !fingerprint) {
       await writeLog(kv, 'unknown', '', fingerprint || '', ip, 'denied', 'missing token or fingerprint', request);
-      return jsonResponse({ valid: false, reason: 'missing_required_fields' }, 400);
+      return denyResponse('missing_required_fields', '缺少必要参数', {
+        missingFields: ['token', 'fingerprint'].filter((field) => !body[field]),
+      }, 400);
     }
 
     const tokenHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
@@ -22,30 +24,43 @@ export async function onRequestPost(context) {
     const tokenIndex = await kv.get(`token_${tokenHash}`, { type: 'json' });
     if (!tokenIndex) {
       await writeLog(kv, 'unknown', '', fingerprint, ip, 'denied', 'token not found', request);
-      return jsonResponse({ valid: false, reason: 'invalid_token' });
+      return denyResponse('invalid_token', 'Token 无效');
     }
 
     if (tokenIndex.status !== 'active') {
       await writeLog(kv, tokenIndex.appId, '', fingerprint, ip, 'denied', 'token revoked', request);
-      return jsonResponse({ valid: false, reason: 'token_revoked' });
+      return denyResponse('token_revoked', 'Token 已吊销', { status: tokenIndex.status });
     }
 
     const rawAppData = await kv.get(`app_${tokenIndex.appId}`, { type: 'json' });
     if (!rawAppData) {
       await writeLog(kv, tokenIndex.appId, '', fingerprint, ip, 'denied', 'app not found', request);
-      return jsonResponse({ valid: false, reason: 'app_not_found' });
+      return denyResponse('app_not_found', '应用不存在');
     }
 
     const appData = hydrateAppData(rawAppData);
 
     if (appData.status !== 'active') {
       await writeLog(kv, appData.id, appData.name, fingerprint, ip, 'suspended', 'app suspended', request);
-      return jsonResponse({ valid: false, reason: 'app_suspended' });
+      return denyResponse('app_suspended', '应用已暂停', { status: appData.status });
     }
 
     if (appData.expiresAt && new Date(appData.expiresAt) < new Date()) {
       await writeLog(kv, appData.id, appData.name, fingerprint, ip, 'expired', 'app expired', request);
-      return jsonResponse({ valid: false, reason: 'app_expired' });
+      return denyResponse('app_expired', '应用已过期', { expiresAt: appData.expiresAt });
+    }
+
+    const geoRestrictionStatus = getGeoRestrictionStatus(appData.geoRestriction, request);
+    if (!geoRestrictionStatus.allowed) {
+      await writeLog(kv, appData.id, appData.name, fingerprint, ip, 'denied', buildGeoRestrictionReason(geoRestrictionStatus), request);
+      return denyResponse('geo_restricted', '当前国家或地区不允许访问', {
+        countryCode: geoRestrictionStatus.location.countryCode,
+        countryName: geoRestrictionStatus.location.countryName,
+        regionCode: geoRestrictionStatus.location.regionCode,
+        regionName: geoRestrictionStatus.location.regionName,
+        allowedCountries: geoRestrictionStatus.geoRestriction.allowedCountries,
+        allowedRegions: geoRestrictionStatus.geoRestriction.allowedRegions,
+      });
     }
 
     const accessWindowStatus = getAccessWindowStatus(appData.accessWindow);
@@ -60,7 +75,12 @@ export async function onRequestPost(context) {
         buildAccessWindowReason(accessWindowStatus),
         request,
       );
-      return jsonResponse({ valid: false, reason: 'outside_access_hours' });
+      return denyResponse('outside_access_hours', '当前不在开放时段内', {
+        timezone: accessWindowStatus.accessWindow.timezone,
+        startHour: accessWindowStatus.accessWindow.startHour,
+        endHour: accessWindowStatus.accessWindow.endHour,
+        currentHour: accessWindowStatus.currentHour,
+      });
     }
 
     const fpHashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint));
@@ -74,7 +94,7 @@ export async function onRequestPost(context) {
     if (device) {
       if (device.banned) {
         await writeLog(kv, appData.id, appData.name, fingerprint, ip, 'banned', 'device banned', request);
-        return jsonResponse({ valid: false, reason: 'device_banned' });
+        return denyResponse('device_banned', '设备已封禁');
       }
 
       device.lastSeen = new Date().toISOString();
@@ -95,7 +115,7 @@ export async function onRequestPost(context) {
             `device limit reached: ${appData.maxDevices}`,
             request,
           );
-          return jsonResponse({ valid: false, reason: 'max_devices_reached' });
+          return denyResponse('max_devices_reached', '设备数已达上限', { limit: appData.maxDevices });
         }
       }
 
@@ -141,7 +161,7 @@ export async function onRequestPost(context) {
     });
   } catch (error) {
     console.error('[verify] request failed', error);
-    return jsonResponse({ valid: false, reason: 'internal_error' }, 500);
+    return denyResponse('internal_error', '服务端内部错误', { message: error.message }, 500);
   }
 }
 
@@ -180,8 +200,17 @@ function buildAccessWindowReason(accessWindowStatus) {
   return `outside access hours ${padHour(accessWindow.startHour)}:00-${padHour(accessWindow.endHour)}:00 (${accessWindow.timezone}), current ${padHour(currentHour)}:00`;
 }
 
+function buildGeoRestrictionReason(geoRestrictionStatus) {
+  const { location, geoRestriction } = geoRestrictionStatus;
+  return `geo restricted country=${location.countryCode || 'unknown'} region=${location.regionCode || location.regionName || 'unknown'} allowCountries=${geoRestriction.allowedCountries.join('|') || '*'} allowRegions=${geoRestriction.allowedRegions.join('|') || '*'}`;
+}
+
 function padHour(hour) {
   return String(hour).padStart(2, '0');
+}
+
+function denyResponse(reason, message, detail = {}, status = 200) {
+  return jsonResponse({ valid: false, reason, message, detail }, status);
 }
 
 async function writeLog(kv, appId, appName, fingerprint, ip, result, reason, request) {

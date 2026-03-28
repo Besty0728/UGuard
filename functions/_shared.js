@@ -5,6 +5,12 @@ export const DEFAULT_ACCESS_WINDOW = Object.freeze({
   timezone: 'Asia/Shanghai',
 });
 
+export const DEFAULT_GEO_RESTRICTION = Object.freeze({
+  enabled: false,
+  allowedCountries: [],
+  allowedRegions: [],
+});
+
 export function getKV(context) {
   const kv = context?.env?.ug_guard ?? globalThis.ug_guard;
 
@@ -65,6 +71,7 @@ export function hydrateAppData(appData) {
   return {
     ...appData,
     accessWindow: normalizeAccessWindow(appData.accessWindow),
+    geoRestriction: normalizeGeoRestriction(appData.geoRestriction),
   };
 }
 
@@ -92,6 +99,46 @@ export function getAccessWindowStatus(accessWindow, now = new Date()) {
   };
 }
 
+export function normalizeGeoRestriction(value) {
+  const raw = value ?? DEFAULT_GEO_RESTRICTION;
+  const enabled = Boolean(raw.enabled);
+  const allowedCountries = normalizeStringList(raw.allowedCountries, true);
+  const allowedRegions = normalizeStringList(raw.allowedRegions, true);
+
+  return {
+    enabled,
+    allowedCountries,
+    allowedRegions,
+  };
+}
+
+export function getGeoRestrictionStatus(geoRestriction, request) {
+  const normalized = normalizeGeoRestriction(geoRestriction);
+  const location = getRequestLocation(request);
+
+  if (!normalized.enabled) {
+    return {
+      allowed: true,
+      geoRestriction: normalized,
+      location,
+    };
+  }
+
+  const countryAllowed =
+    normalized.allowedCountries.length === 0 ||
+    (location.countryCode && normalized.allowedCountries.includes(location.countryCode));
+  const regionAllowed =
+    normalized.allowedRegions.length === 0 ||
+    (location.regionCode && normalized.allowedRegions.includes(location.regionCode)) ||
+    (location.regionName && normalized.allowedRegions.includes(location.regionName.toUpperCase()));
+
+  return {
+    allowed: countryAllowed && regionAllowed,
+    geoRestriction: normalized,
+    location,
+  };
+}
+
 function normalizeHour(value, name, min, max) {
   const hour = Number(value);
 
@@ -116,6 +163,53 @@ function normalizeTimeZone(value) {
   }
 
   return timezone;
+}
+
+function normalizeStringList(value, uppercase = false) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const normalized = value
+    .map((item) => String(item).trim())
+    .filter(Boolean)
+    .map((item) => (uppercase ? item.toUpperCase() : item));
+
+  return [...new Set(normalized)];
+}
+
+function getRequestLocation(request) {
+  const geo = request?.eo?.geo ?? {};
+  const countryCode =
+    normalizeLocationValue(geo.countryCodeAlpha2, true) ||
+    normalizeLocationValue(request.headers.get('EO-Country-Code'), true) ||
+    normalizeLocationValue(request.headers.get('X-Geo-Country'), true);
+  const countryName =
+    normalizeLocationValue(geo.countryName, false) ||
+    normalizeLocationValue(request.headers.get('EO-Country-Name'), false);
+  const regionCode =
+    normalizeLocationValue(geo.regionCode, true) ||
+    normalizeLocationValue(request.headers.get('EO-Region-Code'), true) ||
+    normalizeLocationValue(request.headers.get('X-Geo-Region'), true);
+  const regionName =
+    normalizeLocationValue(geo.regionName, false) ||
+    normalizeLocationValue(request.headers.get('EO-Region-Name'), false);
+
+  return {
+    countryCode,
+    countryName,
+    regionCode,
+    regionName,
+  };
+}
+
+function normalizeLocationValue(value, uppercase) {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  return uppercase ? normalized.toUpperCase() : normalized;
 }
 
 function getHourInTimezone(timezone, now) {

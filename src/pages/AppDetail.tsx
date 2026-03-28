@@ -7,14 +7,20 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { BackButton, DeleteButton, RefreshButton, StatusToggle, ThemeButton } from '@/components/common/Buttons';
 import { WaveInput } from '@/components/common/Inputs';
 import { deleteApp, getApp, getDevices, updateApp, updateDevice } from '@/lib/api';
-import { formatAccessWindow, formatDate, timeAgo } from '@/lib/utils';
-import type { AccessWindow, AppInfo, DeviceInfo } from '@/types';
+import { formatAccessWindow, formatDate, formatGeoRestriction, timeAgo } from '@/lib/utils';
+import type { AccessWindow, AppInfo, DeviceInfo, GeoRestriction } from '@/types';
 
 const DEFAULT_ACCESS_WINDOW: AccessWindow = {
   enabled: false,
   startHour: 9,
   endHour: 18,
   timezone: 'Asia/Shanghai',
+};
+
+const DEFAULT_GEO_RESTRICTION: GeoRestriction = {
+  enabled: false,
+  allowedCountries: [],
+  allowedRegions: [],
 };
 
 export function AppDetail() {
@@ -38,6 +44,9 @@ export function AppDetail() {
   const [editAccessWindowStartHour, setEditAccessWindowStartHour] = useState(9);
   const [editAccessWindowEndHour, setEditAccessWindowEndHour] = useState(18);
   const [editAccessWindowTimezone, setEditAccessWindowTimezone] = useState('Asia/Shanghai');
+  const [editGeoRestrictionEnabled, setEditGeoRestrictionEnabled] = useState(false);
+  const [editAllowedCountries, setEditAllowedCountries] = useState('');
+  const [editAllowedRegions, setEditAllowedRegions] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -68,6 +77,7 @@ export function AppDetail() {
     }
 
     const accessWindow = app.accessWindow ?? DEFAULT_ACCESS_WINDOW;
+    const geoRestriction = app.geoRestriction ?? DEFAULT_GEO_RESTRICTION;
     setEditName(app.name);
     setEditMaxDevices(app.maxDevices);
     setEditLogRetention(app.logRetention ?? -1);
@@ -76,6 +86,9 @@ export function AppDetail() {
     setEditAccessWindowStartHour(accessWindow.startHour);
     setEditAccessWindowEndHour(accessWindow.endHour);
     setEditAccessWindowTimezone(accessWindow.timezone);
+    setEditGeoRestrictionEnabled(geoRestriction.enabled);
+    setEditAllowedCountries(geoRestriction.allowedCountries.join(', '));
+    setEditAllowedRegions(geoRestriction.allowedRegions.join(', '));
     setShowEdit(true);
   }
 
@@ -98,6 +111,11 @@ export function AppDetail() {
           editAccessWindowStartHour,
           editAccessWindowEndHour,
           editAccessWindowTimezone,
+        ),
+        geoRestriction: buildGeoRestrictionPayload(
+          editGeoRestrictionEnabled,
+          editAllowedCountries,
+          editAllowedRegions,
         ),
       });
       setApp(updated);
@@ -166,6 +184,7 @@ export function AppDetail() {
     ['已注册设备', String(devices.length)],
     ['日志保留', app.logRetention === 0 ? '不记录' : app.logRetention === -1 || app.logRetention == null ? '全部' : `最近 ${app.logRetention} 条`],
     ['开放时段', formatAccessWindow(app.accessWindow)],
+    ['地域限制', formatGeoRestriction(app.geoRestriction)],
     ['创建时间', formatDate(app.createdAt)],
     ['到期时间', formatDate(app.expiresAt)],
   ];
@@ -341,6 +360,36 @@ export function AppDetail() {
                 )}
               </div>
 
+              <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50/70 p-4">
+                <label className="flex items-center gap-3 text-[13px] font-semibold text-dark/80">
+                  <input
+                    type="checkbox"
+                    checked={editGeoRestrictionEnabled}
+                    onChange={(event) => setEditGeoRestrictionEnabled(event.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 text-amber-500 focus:ring-amber-400"
+                  />
+                  限制国家 / 地区
+                </label>
+                <p className="mt-2 text-[12px] font-medium text-dark/45">
+                  使用逗号分隔。国家建议填 ISO 两位码，例如 CN, US。地区可填平台返回的 regionCode 或 regionName。
+                </p>
+
+                {editGeoRestrictionEnabled && (
+                  <div className="mt-5 grid grid-cols-2 gap-4">
+                    <WaveInput
+                      label="允许国家"
+                      value={editAllowedCountries}
+                      onChange={(event) => setEditAllowedCountries(event.target.value)}
+                    />
+                    <WaveInput
+                      label="允许地区"
+                      value={editAllowedRegions}
+                      onChange={(event) => setEditAllowedRegions(event.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4">
                 <ThemeButton variant="gray" onClick={() => setShowEdit(false)}>
                   取消
@@ -446,4 +495,23 @@ function buildAccessWindowPayload(
     endHour,
     timezone: normalizedTimezone,
   };
+}
+
+function buildGeoRestrictionPayload(enabled: boolean, countriesInput: string, regionsInput: string): GeoRestriction {
+  if (!enabled) {
+    return DEFAULT_GEO_RESTRICTION;
+  }
+
+  return {
+    enabled: true,
+    allowedCountries: splitCsv(countriesInput).map((item) => item.toUpperCase()),
+    allowedRegions: splitCsv(regionsInput).map((item) => item.toUpperCase()),
+  };
+}
+
+function splitCsv(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

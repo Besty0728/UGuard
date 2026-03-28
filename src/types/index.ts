@@ -7,6 +7,30 @@ export interface AccessWindow {
   timezone: string;
 }
 
+export interface GeoRestriction {
+  enabled: boolean;
+  allowedCountries: string[];
+  allowedRegions: string[];
+}
+
+export interface VerifyDetail {
+  message?: string;
+  expiresAt?: string | null;
+  status?: string;
+  limit?: number;
+  timezone?: string;
+  startHour?: number;
+  endHour?: number;
+  currentHour?: number | null;
+  countryCode?: string;
+  countryName?: string;
+  regionCode?: string;
+  regionName?: string;
+  allowedCountries?: string[];
+  allowedRegions?: string[];
+  missingFields?: string[];
+}
+
 export interface AppInfo {
   id: string;
   name: string;
@@ -18,6 +42,7 @@ export interface AppInfo {
   logRetention: number;
   permissions: { features: string[] };
   accessWindow?: AccessWindow;
+  geoRestriction?: GeoRestriction;
   token?: string;
   deviceCount?: number;
 }
@@ -79,6 +104,8 @@ export interface VerifyRequest {
 export interface VerifyResponse {
   valid: boolean;
   reason?: string;
+  message?: string;
+  detail?: VerifyDetail;
   permissions?: { features: string[] };
 }
 

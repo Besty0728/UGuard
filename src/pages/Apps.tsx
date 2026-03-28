@@ -6,14 +6,20 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { StatusBadge } from '@/components/StatusBadge';
 import { RefreshButton, StatusToggle, ThemeButton } from '@/components/common/Buttons';
 import { WaveInput } from '@/components/common/Inputs';
-import { formatAccessWindow, formatDate } from '@/lib/utils';
-import type { AccessWindow, AppInfo } from '@/types';
+import { formatAccessWindow, formatDate, formatGeoRestriction } from '@/lib/utils';
+import type { AccessWindow, AppInfo, GeoRestriction } from '@/types';
 
 const DEFAULT_ACCESS_WINDOW: AccessWindow = {
   enabled: false,
   startHour: 9,
   endHour: 18,
   timezone: 'Asia/Shanghai',
+};
+
+const DEFAULT_GEO_RESTRICTION: GeoRestriction = {
+  enabled: false,
+  allowedCountries: [],
+  allowedRegions: [],
 };
 
 export function Apps() {
@@ -28,6 +34,9 @@ export function Apps() {
   const [accessWindowStartHour, setAccessWindowStartHour] = useState(9);
   const [accessWindowEndHour, setAccessWindowEndHour] = useState(18);
   const [accessWindowTimezone, setAccessWindowTimezone] = useState('Asia/Shanghai');
+  const [geoRestrictionEnabled, setGeoRestrictionEnabled] = useState(false);
+  const [allowedCountries, setAllowedCountries] = useState('');
+  const [allowedRegions, setAllowedRegions] = useState('');
   const [creating, setCreating] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [token, setToken] = useState('');
@@ -68,7 +77,8 @@ export function Apps() {
         accessWindowEndHour,
         accessWindowTimezone,
       );
-      const result = await createApp(name.trim(), maxDevices, expiresAt || null, accessWindow);
+      const geoRestriction = buildGeoRestrictionPayload(geoRestrictionEnabled, allowedCountries, allowedRegions);
+      const result = await createApp(name.trim(), maxDevices, expiresAt || null, accessWindow, geoRestriction);
 
       setToken(result.token);
       setShowToken(true);
@@ -110,6 +120,9 @@ export function Apps() {
     setAccessWindowStartHour(DEFAULT_ACCESS_WINDOW.startHour);
     setAccessWindowEndHour(DEFAULT_ACCESS_WINDOW.endHour);
     setAccessWindowTimezone(DEFAULT_ACCESS_WINDOW.timezone);
+    setGeoRestrictionEnabled(false);
+    setAllowedCountries('');
+    setAllowedRegions('');
   }
 
   function copyToken() {
@@ -170,6 +183,7 @@ export function Apps() {
                         {app.name}
                       </span>
                       <p className="text-[12px] font-medium text-dark/40">{formatAccessWindow(app.accessWindow)}</p>
+                      <p className="text-[12px] font-medium text-dark/35">{formatGeoRestriction(app.geoRestriction)}</p>
                     </div>
                   </td>
                   <td className="px-5 py-4">
@@ -288,6 +302,38 @@ export function Apps() {
                 )}
               </div>
 
+              <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50/70 p-4">
+                <label className="flex items-center gap-3 text-[13px] font-semibold text-dark/80">
+                  <input
+                    type="checkbox"
+                    checked={geoRestrictionEnabled}
+                    onChange={(event) => setGeoRestrictionEnabled(event.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300 text-amber-500 focus:ring-amber-400"
+                  />
+                  限制国家 / 地区
+                </label>
+                <p className="mt-2 text-[12px] font-medium text-dark/45">
+                  使用逗号分隔。国家建议填 ISO 两位码，例如 CN, US。地区可填平台返回的 regionCode 或 regionName。
+                </p>
+
+                {geoRestrictionEnabled && (
+                  <div className="mt-5 grid grid-cols-2 gap-4">
+                    <WaveInput
+                      label="允许国家"
+                      value={allowedCountries}
+                      onChange={(event) => setAllowedCountries(event.target.value)}
+                      placeholder="CN, US"
+                    />
+                    <WaveInput
+                      label="允许地区"
+                      value={allowedRegions}
+                      onChange={(event) => setAllowedRegions(event.target.value)}
+                      placeholder="SH, GUANGDONG"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4">
                 <ThemeButton type="button" variant="gray" onClick={() => setShowCreate(false)}>
                   取消
@@ -386,4 +432,23 @@ function buildAccessWindowPayload(
     endHour,
     timezone: normalizedTimezone,
   };
+}
+
+function buildGeoRestrictionPayload(enabled: boolean, countriesInput: string, regionsInput: string): GeoRestriction {
+  if (!enabled) {
+    return DEFAULT_GEO_RESTRICTION;
+  }
+
+  return {
+    enabled: true,
+    allowedCountries: splitCsv(countriesInput).map((item) => item.toUpperCase()),
+    allowedRegions: splitCsv(regionsInput).map((item) => item.toUpperCase()),
+  };
+}
+
+function splitCsv(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
