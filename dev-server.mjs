@@ -305,7 +305,9 @@ async function handleLogs(method, url) {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '50', 10), 256);
   const cursor = url.searchParams.get('cursor') || undefined;
 
-  const listResult = await ug_access_logs.list({ prefix: 'log_', limit: 256, cursor });
+  const listOpts = { prefix: 'log_', limit: 256 };
+  if (cursor) listOpts.cursor = cursor;
+  const listResult = await ug_access_logs.list(listOpts);
   const allMatched = [];
   for (const key of listResult.keys) {
     const logData = await ug_access_logs.get(key.name, { type: 'json' });

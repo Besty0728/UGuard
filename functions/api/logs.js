@@ -12,11 +12,9 @@ export async function onRequestGet({ request }) {
     const cursor = url.searchParams.get('cursor') || undefined;
 
     // 从 ug_access_logs KV 中列出日志 key
-    const listResult = await ug_access_logs.list({
-      prefix: 'log_',
-      limit: 256,
-      cursor,
-    });
+    const listOpts = { prefix: 'log_', limit: 256 };
+    if (cursor) listOpts.cursor = cursor;
+    const listResult = await ug_access_logs.list(listOpts);
 
     // 收集匹配的日志（保留 KV key 用于可能的清理）
     const allMatched = [];
