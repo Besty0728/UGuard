@@ -8,20 +8,14 @@ interface WaveInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const WaveInput: React.FC<WaveInputProps> = ({ label, className, ...props }) => {
   return (
-    <div className={cn("wave-group", className)}>
-      <input 
-        required 
-        autoComplete="off" 
-        className="input" 
-        placeholder=" "
-        {...props} 
-      />
+    <div className={cn('wave-group', className)}>
+      <input autoComplete="off" className="input" placeholder=" " {...props} />
       <span className="bar"></span>
       <label className="label">
         {label.split('').map((char, index) => (
-          <span 
-            key={index} 
-            className="label-char" 
+          <span
+            key={index}
+            className="label-char"
             style={{ '--index': index } as React.CSSProperties}
           >
             {char === ' ' ? '\u00A0' : char}
