@@ -119,6 +119,7 @@ export function Layout() {
               <button
                 onClick={() => setMobileMenuOpen(true)}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E5E0D8]/60 bg-white/60 text-dark/70 shadow-sm transition-colors hover:bg-white hover:text-dark md:hidden"
+                title={language === 'zh' ? '打开菜单' : 'Open menu'}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="3" y1="6" x2="21" y2="6" />
