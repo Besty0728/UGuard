@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
@@ -9,6 +10,9 @@ export function Layout() {
   const { logout } = useAuth();
   const { language, setLanguage } = useI18n();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
   const navItems = [
     {
@@ -38,51 +42,91 @@ export function Layout() {
     },
   ];
 
+  const sidebarContent = (
+    <>
+      <div className="flex h-[64px] items-center border-b border-[#E5E0D8]/60 px-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 shadow-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+          </div>
+          <span className="font-display text-[16px] font-bold tracking-wider text-dark">UGuard</span>
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-2 px-4 pt-5">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            onClick={closeMobileMenu}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-xl border px-3 py-2.5 font-semibold transition-all duration-200',
+                isActive
+                  ? 'border-amber-200/50 bg-amber-50/80 text-amber-700 shadow-sm'
+                  : 'border-transparent text-dark/60 hover:bg-white/50 hover:text-dark',
+              )
+            }
+          >
+            {item.icon}
+            <span className="text-[14px]">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="px-6 pb-6">
+        <LogoutButton onClick={() => {
+          closeMobileMenu();
+          logout();
+          navigate('/login');
+        }} />
+      </div>
+    </>
+  );
+
   return (
     <ClickSpark sparkColor="#f59e0b" sparkSize={12} sparkRadius={20} sparkCount={10} duration={400}>
       <div className="relative z-0 flex h-screen overflow-hidden bg-beige-200 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-50/50 via-beige-200 to-beige-200 text-dark">
-        <aside className="z-10 flex w-[20%] min-w-[220px] max-w-[280px] shrink-0 flex-col border-r border-[#E5E0D8]/60 bg-white/60 shadow-glass backdrop-blur-2xl">
-          <div className="flex h-[64px] items-center border-b border-[#E5E0D8]/60 px-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 shadow-sm">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-              </div>
-              <span className="font-display text-[16px] font-bold tracking-wider text-dark">UGuard</span>
-            </div>
-          </div>
+        {/* Desktop sidebar */}
+        <aside className="z-10 hidden w-[20%] min-w-[220px] max-w-[280px] shrink-0 flex-col border-r border-[#E5E0D8]/60 bg-white/60 shadow-glass backdrop-blur-2xl md:flex">
+          {sidebarContent}
+        </aside>
 
-          <nav className="flex-1 space-y-2 px-4 pt-5">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-xl border px-3 py-2.5 font-semibold transition-all duration-200',
-                    isActive
-                      ? 'border-amber-200/50 bg-amber-50/80 text-amber-700 shadow-sm'
-                      : 'border-transparent text-dark/60 hover:bg-white/50 hover:text-dark',
-                  )
-                }
-              >
-                {item.icon}
-                <span className="text-[14px]">{item.label}</span>
-              </NavLink>
-            ))}
-          </nav>
+        {/* Mobile overlay */}
+        <div
+          className={cn(
+            'fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity duration-300 md:hidden',
+            mobileMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+          )}
+          onClick={closeMobileMenu}
+        />
 
-          <div className="px-6 pb-6">
-            <LogoutButton onClick={() => {
-              logout();
-              navigate('/login');
-            }} />
-          </div>
+        {/* Mobile drawer */}
+        <aside
+          className={cn(
+            'fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-[#E5E0D8]/60 bg-white/95 shadow-xl backdrop-blur-2xl transition-transform duration-300 ease-in-out md:hidden',
+            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
+        >
+          {sidebarContent}
         </aside>
 
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto flex w-full max-w-7xl flex-col p-8">
-            <div className="mb-6 flex justify-end">
+          <div className="mx-auto flex w-full max-w-7xl flex-col p-4 md:p-8">
+            <div className="mb-4 flex items-center justify-between md:mb-6 md:justify-end">
+              {/* Mobile hamburger */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E5E0D8]/60 bg-white/60 text-dark/70 shadow-sm transition-colors hover:bg-white hover:text-dark md:hidden"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+
               <ThemeButton
                 variant="gray"
                 onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}

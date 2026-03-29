@@ -125,15 +125,15 @@ export function AccessLogs() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-display text-2xl font-bold tracking-tight text-dark">{text.title}</h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <CustomDropdown
             value={fApp}
             onChange={setFApp}
             options={[{ value: '', label: text.allApps }, ...apps.map((app) => ({ value: app.id, label: app.name }))]}
           />
-          <CustomDropdown value={fResult} onChange={setFResult} options={text.results} className="min-w-[140px]" />
+          <CustomDropdown value={fResult} onChange={setFResult} options={text.results} className="min-w-[120px] sm:min-w-[140px]" />
           <RefreshButton onClick={() => load(true)} disabled={loading} className="shrink-0" />
         </div>
       </div>
@@ -145,7 +145,9 @@ export function AccessLogs() {
       ) : logs.length === 0 ? (
         <EmptyState title={text.empty} />
       ) : (
-        <div className="card overflow-hidden">
+        <>
+        {/* Desktop table */}
+        <div className="card hidden overflow-hidden lg:block">
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-neutral-100/60 bg-white/20 text-[12px] font-semibold uppercase tracking-wider text-dark/50">
@@ -193,6 +195,46 @@ export function AccessLogs() {
             </div>
           )}
         </div>
+
+        {/* Mobile card list */}
+        <div className="space-y-3 lg:hidden">
+          {logs.map((log) => (
+            <div key={log.id} className="card space-y-2.5 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-dark">{log.appName || '-'}</p>
+                  <p className="text-[12px] text-dark/50">{formatDate(log.timestamp, language)}</p>
+                </div>
+                <StatusBadge status={log.result} />
+              </div>
+              {log.reason && (
+                <p className="text-[13px] text-dark/60">{text.reason}: {log.reason}</p>
+              )}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-dark/50">
+                <span className="font-mono">IP: {log.ip}</span>
+                <span>{formatCountry(log)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[11px] text-dark/35">{log.deviceFingerprint.slice(0, 20)}...</span>
+                <DeleteButton
+                  onClick={() => handleDelete(log.id)}
+                  disabled={deleting === log.id}
+                  className="scale-[0.7] origin-right"
+                  text={deleting === log.id ? '...' : text.delete}
+                />
+              </div>
+            </div>
+          ))}
+
+          {hasMore && (
+            <div className="py-4 text-center">
+              <ThemeButton onClick={() => load(false)} disabled={loading}>
+                {loading ? text.loadingMore : text.loadMore}
+              </ThemeButton>
+            </div>
+          )}
+        </div>
+        </>
       )}
     </div>
   );
