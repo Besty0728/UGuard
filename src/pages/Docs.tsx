@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
+import advancedUnitySample from '@/assets/snippets/UGuardShield.cs?raw';
 
 const unitySample = `using UnityEngine;
 using UnityEngine.Networking;
@@ -185,14 +186,17 @@ function CodeBlock({ code }: { code: string }) {
           <code>{code}</code>
         </pre>
       </div>
-      <button onClick={copy} className="absolute right-2 top-1.5 rounded-lg border border-white/20 px-3 py-1 text-[12px] font-bold text-white/50 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-white">
+      <button
+        onClick={copy}
+        className="absolute right-2 top-1.5 rounded-lg border border-white/20 px-3 py-1 text-[12px] font-bold text-white/50 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-white"
+      >
         {copied ? copyText.done : copyText.idle}
       </button>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="space-y-3">
       <h3 className="font-display text-[17px] font-bold text-dark">{title}</h3>
@@ -201,7 +205,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Inline({ children }: { children: React.ReactNode }) {
+function Inline({ children }: { children: ReactNode }) {
   return (
     <code className="mx-0.5 rounded-md border border-amber-500/10 bg-amber-50 px-1.5 py-0.5 font-mono text-[13px] font-medium text-amber-900 shadow-sm">
       {children}
@@ -212,6 +216,18 @@ function Inline({ children }: { children: React.ReactNode }) {
 export function Docs() {
   const [active, setActive] = useState<TabId>('quickstart');
   const { language } = useI18n();
+
+  function downloadSample() {
+    const blob = new Blob([advancedUnitySample], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'UGuardShield.cs';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }
 
   const text =
     language === 'zh'
@@ -224,13 +240,35 @@ export function Docs() {
           ],
           flowTitle: '整体流程',
           flowText1: 'Unity 客户端调用 ',
-          flowText2: ' 完成授权校验。服务端会依次校验 Token、应用状态、到期时间、国家/地区限制、开放时段、设备封禁和设备上限。',
-          flowText3: '拒绝时可以从 ',
+          flowText2: ' 完成授权校验。服务端会依次检查 Token、应用状态、到期时间、国家/地区限制、开放时段、设备封禁和设备上限。',
+          flowText3: '当验证被拒绝时，可以从 ',
           flowText4: '、',
           flowText5: ' 和 ',
-          flowText6: ' 中获得结构化信息；网络超时则由客户端本地归类。',
-          unityTitle: 'Unity 示例',
-          unityDesc: '下面脚本演示了如何读取 valid / reason / message / detail。',
+          flowText6: ' 中读取结构化结果；网络超时等分类由客户端自行归类。',
+          unityTitle: '基础 Unity 示例',
+          unityDesc: '下面的脚本演示如何读取 valid / reason / message / detail。',
+          advancedTitle: '高级 Unity 防护脚本',
+          advancedDesc: '这份可下载脚本把 UGuard 平台校验与时间戳校验整合到同一个 MonoBehaviour 中，可直接放入 Unity 工程使用。',
+          strategyTitle: '验证策略',
+          strategyItems: [
+            'PlatformAndTimestamp：先走 UGuard 平台校验，再做时间戳校验，两个都通过才放行。',
+            'PlatformOnly：只调用 UGuard /api/verify，适合纯在线授权。',
+            'TimestampOnly：只做截止时间校验，联网优先取网络时间，失败后回退到本地防回拨缓存。',
+          ],
+          protectionTitle: '防护模式',
+          protectionItems: [
+            'BlackScreen：直接黑屏，不显示原因。',
+            'ForceQuit：记录日志后立即退出应用。',
+            'MessageThenBlackScreen：先输出违规信息，再显示黑屏遮罩。',
+          ],
+          usageTitle: '使用方式',
+          usageItems: [
+            '把脚本挂到常驻对象上，填写 serverUrl、token、expireAtUtc。',
+            '如果项目已安装 TextMeshPro，可把 TMP_Text 拖入脚本字段同步显示状态。',
+            'networkTimeUrl 留空时默认使用 serverUrl，并读取 HTTP Date 响应头作为网络时间。',
+            '脚本总是输出 Debug 日志，验证失败时按 Inspector 中选择的防护模式执行。',
+          ],
+          downloadLabel: '下载脚本',
           adminTitle: '后台能力',
           adminItems: [
             '支持绝对到期时间 expiresAt',
@@ -247,29 +285,29 @@ export function Docs() {
           chainTitle: '验证链路',
           chainItems: [
             '检查 token 和 fingerprint 是否存在',
-            '校验 Token 是否有效、是否已吊销',
+            '验证 Token 是否有效、是否已吊销',
             '检查应用是否存在、是否暂停、是否过期',
             '检查当前地区是否命中允许范围',
             '检查当前时间是否在开放时段内',
             '检查设备是否被封禁、是否超过上限',
-            '成功时返回 valid=true 与 permissions',
+            '成功时返回 valid=true 和 permissions',
           ],
-          errorsIntro: '以下是 Unity 客户端可能消费到的拒绝原因。前面的原因来自 /api/verify，网络类原因由客户端本地归类。',
+          errorsIntro: '以下是 Unity 客户端可能消费到的拒绝原因。服务端原因来自 /api/verify，网络原因由客户端本地归类。',
           meaning: '含义',
           action: '建议处理',
           errorRows: [
             ['missing_required_fields', '缺少 token 或 fingerprint', '补齐请求字段'],
-            ['invalid_token', 'Token 无效', '检查后台里对应 Token 是否正确'],
+            ['invalid_token', 'Token 无效', '检查后台中对应 Token 是否正确'],
             ['token_revoked', 'Token 已吊销', '重新生成或恢复 Token'],
             ['app_not_found', '应用不存在', '确认应用未被删除'],
-            ['app_suspended', '应用已暂停', '后台恢复应用'],
+            ['app_suspended', '应用已暂停', '在后台恢复应用'],
             ['app_expired', '应用已过期', '续期后重新验证'],
             ['geo_restricted', '当前国家或地区不允许访问', '调整后台地理限制'],
             ['outside_access_hours', '当前不在开放时段内', '在开放时段内再次验证'],
-            ['device_banned', '设备已封禁', '后台解除设备封禁'],
+            ['device_banned', '设备已封禁', '在后台解除设备封禁'],
             ['max_devices_reached', '设备数已达上限', '清理设备或提高上限'],
             ['internal_error', '服务端内部错误', '检查服务端日志'],
-            ['network_timeout', '客户端请求超时', '检查客户端网络与超时设置'],
+            ['network_timeout', '客户端请求超时', '检查网络与超时设置'],
             ['network_error', '客户端网络错误', '检查客户端网络环境'],
           ],
         }
@@ -287,8 +325,30 @@ export function Docs() {
           flowText4: ', ',
           flowText5: ' and ',
           flowText6: '; network timeout categories are decided by the client.',
-          unityTitle: 'Unity example',
+          unityTitle: 'Basic Unity example',
           unityDesc: 'The sample below shows how to consume valid / reason / message / detail.',
+          advancedTitle: 'Advanced Unity guard script',
+          advancedDesc: 'This downloadable MonoBehaviour combines UGuard platform verification and timestamp validation in one runnable script.',
+          strategyTitle: 'Validation strategies',
+          strategyItems: [
+            'PlatformAndTimestamp: run UGuard verification first, then timestamp verification. Both must pass.',
+            'PlatformOnly: call UGuard /api/verify only. Use this for online-only licensing.',
+            'TimestampOnly: enforce only the expiration timestamp. Prefer network time and fall back to protected local evidence.',
+          ],
+          protectionTitle: 'Protection modes',
+          protectionItems: [
+            'BlackScreen: switch to a black overlay without exposing the reason.',
+            'ForceQuit: log the failure and exit the application immediately.',
+            'MessageThenBlackScreen: surface the violation reason, then apply a black overlay.',
+          ],
+          usageTitle: 'How to use it',
+          usageItems: [
+            'Attach the script to a persistent GameObject and fill in serverUrl, token, and expireAtUtc.',
+            'If TextMeshPro is installed, drag a TMP_Text into the optional field to mirror runtime status.',
+            'When networkTimeUrl is empty, the script falls back to serverUrl and reads the HTTP Date header.',
+            'The script always logs to Debug and applies the selected protection mode on failure.',
+          ],
+          downloadLabel: 'Download script',
           adminTitle: 'Admin console capabilities',
           adminItems: [
             'Absolute expiration via expiresAt',
@@ -376,6 +436,39 @@ export function Docs() {
             <CodeBlock code={unitySample} />
           </Section>
 
+          <Section title={text.advancedTitle}>
+            <p>{text.advancedDesc}</p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={downloadSample}
+                className="rounded-xl border border-amber-300 bg-amber-500 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-amber-600"
+              >
+                {text.downloadLabel}
+              </button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="card space-y-3 p-4">
+                <p className="text-[12px] font-medium uppercase tracking-wider text-neutral-500">{text.strategyTitle}</p>
+                <ul className="list-inside list-disc space-y-2 text-[13px] text-neutral-600">
+                  {text.strategyItems.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+              <div className="card space-y-3 p-4">
+                <p className="text-[12px] font-medium uppercase tracking-wider text-neutral-500">{text.protectionTitle}</p>
+                <ul className="list-inside list-disc space-y-2 text-[13px] text-neutral-600">
+                  {text.protectionItems.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+              <div className="card space-y-3 p-4">
+                <p className="text-[12px] font-medium uppercase tracking-wider text-neutral-500">{text.usageTitle}</p>
+                <ul className="list-inside list-disc space-y-2 text-[13px] text-neutral-600">
+                  {text.usageItems.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+            </div>
+            <CodeBlock code={advancedUnitySample} />
+          </Section>
+
           <Section title={text.adminTitle}>
             <ul className="list-inside list-disc space-y-1.5 text-[13px] text-neutral-600">
               {text.adminItems.map((item) => <li key={item}>{item}</li>)}
@@ -432,7 +525,10 @@ export function Docs() {
               </thead>
               <tbody>
                 {text.errorRows.map(([reason, meaning, action]) => (
-                  <tr key={reason} className="border-b border-neutral-100/40 transition-all duration-200 last:border-0 hover:bg-white/60">
+                  <tr
+                    key={reason}
+                    className="border-b border-neutral-100/40 transition-all duration-200 last:border-0 hover:bg-white/60"
+                  >
                     <td className="whitespace-nowrap px-6 py-4 font-mono text-[13px] font-medium text-amber-700">{reason}</td>
                     <td className="px-6 py-4 text-[13px] font-medium text-dark/70">{meaning}</td>
                     <td className="px-6 py-4 text-[13px] font-medium text-dark/50">{action}</td>
